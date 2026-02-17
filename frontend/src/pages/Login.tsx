@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api';
-import { Music, Loader2 } from 'lucide-react';
+import { GeckoLogo } from '@/components/GeckoLogo';
+import { Loader2 } from 'lucide-react';
 
 export function Login() {
   const [username, setUsername] = useState('');
@@ -37,10 +38,10 @@ export function Login() {
       <div className="relative w-full max-w-sm space-y-6 p-8">
         <div className="flex flex-col items-center gap-3">
           <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center shadow-lg shadow-primary/5">
-            <Music className="w-7 h-7 text-primary" />
+            <GeckoLogo className="w-8 h-8 text-primary" />
           </div>
           <div className="text-center">
-            <h1 className="text-xl font-semibold">TS3 Music Bot</h1>
+            <h1 className="text-xl font-semibold">GeckoBot</h1>
             <p className="text-sm text-muted-foreground mt-1">Sign in to your dashboard</p>
           </div>
         </div>
