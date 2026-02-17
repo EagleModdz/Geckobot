@@ -13,14 +13,23 @@ router.get('/', (_req: Request, res: Response) => {
 });
 
 router.post('/add', async (req: Request, res: Response) => {
-  const track = req.body as Track;
+  const { autoPlay, ...track } = req.body as Track & { autoPlay?: boolean };
   if (!track.url || !track.title) {
     res.status(400).json({ error: 'Track url and title are required' });
     return;
   }
   const username = typeof req.user?.username === 'string' ? req.user.username : 'Unknown';
-  const item = await queueService.addTrack(track, username);
+  const item = await queueService.addTrack(track, username, undefined, autoPlay ?? true);
   res.json({ message: 'Track added to queue', item });
+});
+
+router.post('/play', async (_req: Request, res: Response) => {
+  const success = await queueService.playQueue();
+  if (success) {
+    res.json({ message: 'Playing queue' });
+  } else {
+    res.status(400).json({ error: 'Queue is empty' });
+  }
 });
 
 router.delete('/:id', async (req: Request, res: Response) => {

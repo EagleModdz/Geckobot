@@ -1,0 +1,196 @@
+import { useState, useEffect } from 'react';
+import { Home, Settings, Bot, FolderTree, Users, Palette, LogOut, Pin, PinOff } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { GeckoLogo } from './GeckoLogo';
+import { useTheme, themes, type ThemeId } from '@/hooks/useTheme';
+
+interface SidebarProps {
+  botConnected: boolean;
+  botName: string;
+  clientsInChannel: { id: number; name: string }[];
+  onOpenChannelBrowser?: () => void;
+  onOpenBotManager?: () => void;
+  currentPage?: 'dashboard' | 'settings';
+}
+
+export function Sidebar({ botConnected, botName, clientsInChannel, onOpenChannelBrowser, onOpenBotManager, currentPage = 'dashboard' }: SidebarProps) {
+  const navigate = useNavigate();
+  const { theme, setTheme } = useTheme();
+  const [pinned, setPinned] = useState(() => localStorage.getItem('sidebarPinned') === 'true');
+  const [hovered, setHovered] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(false);
+
+  const expanded = pinned || hovered;
+
+  useEffect(() => {
+    localStorage.setItem('sidebarPinned', String(pinned));
+  }, [pinned]);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    navigate('/login');
+  };
+
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  return (
+    <aside
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => { setHovered(false); setThemeOpen(false); }}
+      className="h-full flex-shrink-0 border-r border-border/50 bg-card/50 flex flex-col overflow-hidden z-30 transition-all duration-200 ease-in-out"
+      style={{ width: expanded ? 224 : 64 }}
+    >
+      {/* Logo + Pin */}
+      <div className="flex items-center gap-2.5 px-4 py-4 flex-shrink-0">
+        <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <GeckoLogo className="h-5 w-5 text-primary" />
+        </div>
+        {expanded && (
+          <div className="flex-1 min-w-0 leading-none">
+            <span className="font-semibold text-base block truncate">GeckoBot</span>
+            <span className="text-[10px] text-muted-foreground/50 block">by zEagleModdz</span>
+          </div>
+        )}
+        {expanded && (
+          <button
+            onClick={() => setPinned((v) => !v)}
+            className="p-1 rounded hover:bg-accent/50 text-muted-foreground/50 hover:text-muted-foreground transition-colors flex-shrink-0"
+            title={pinned ? 'Unpin sidebar' : 'Pin sidebar'}
+          >
+            {pinned ? <PinOff className="h-3.5 w-3.5" /> : <Pin className="h-3.5 w-3.5" />}
+          </button>
+        )}
+      </div>
+
+      {/* Bot status */}
+      <div className="px-3 mb-2 flex-shrink-0">
+        <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-md">
+          <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${botConnected ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]' : 'bg-red-500'}`} />
+          {expanded && (
+            <span className="text-sm text-muted-foreground truncate">{botName || 'Bot'}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="px-3 space-y-0.5 flex-shrink-0">
+        <NavItem icon={Home} label="Dashboard" active={currentPage === 'dashboard'} expanded={expanded} onClick={() => navigate('/')} />
+        <NavItem icon={Settings} label="Settings" active={currentPage === 'settings'} expanded={expanded} onClick={() => navigate('/settings')} />
+        {onOpenBotManager && (
+          <NavItem icon={Bot} label="Manage Bots" expanded={expanded} onClick={onOpenBotManager} />
+        )}
+        {onOpenChannelBrowser && (
+          <NavItem icon={FolderTree} label="Channels" expanded={expanded} onClick={onOpenChannelBrowser} />
+        )}
+      </nav>
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Listeners */}
+      <div className="px-3 mb-1 flex-shrink-0">
+        <div className="flex items-center gap-2.5 px-2 py-1.5">
+          <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          {expanded ? (
+            <span className="text-sm text-muted-foreground">{clientsInChannel.length} listener{clientsInChannel.length !== 1 ? 's' : ''}</span>
+          ) : (
+            clientsInChannel.length > 0 && (
+              <span className="text-xs text-muted-foreground font-medium">{clientsInChannel.length}</span>
+            )
+          )}
+        </div>
+        {expanded && clientsInChannel.length > 0 && (
+          <div className="pl-8 space-y-0.5 max-h-24 overflow-y-auto mb-1">
+            {clientsInChannel.map((c) => (
+              <div key={c.id} className="flex items-center gap-1.5 py-0.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-500/60 flex-shrink-0" />
+                <span className="text-xs text-muted-foreground/70 truncate">{c.name}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Theme switcher */}
+      <div className="px-3 mb-1 flex-shrink-0">
+        <button
+          onClick={() => setThemeOpen((v) => !v)}
+          className="flex items-center gap-2.5 w-full px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors"
+        >
+          <Palette className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+          {expanded && <span className="text-sm text-muted-foreground">Theme</span>}
+        </button>
+        {expanded && themeOpen && (
+          <div className="mt-1 px-1 pb-1">
+            <div className="grid grid-cols-4 gap-1.5 p-2 rounded-md bg-secondary/30">
+              {themes.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTheme(t.id as ThemeId)}
+                  className={`w-full aspect-square rounded-md border-2 transition-all ${
+                    theme === t.id ? 'border-foreground scale-110' : 'border-transparent hover:border-muted-foreground/30'
+                  }`}
+                  style={{ backgroundColor: t.color }}
+                  title={t.name}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* User + logout */}
+      <div className="px-3 pb-3 flex-shrink-0 border-t border-border/30 pt-2">
+        <div className="flex items-center gap-2.5 px-2">
+          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+            <span className="text-sm font-medium text-primary">
+              {(user.username || 'U')[0].toUpperCase()}
+            </span>
+          </div>
+          {expanded && (
+            <>
+              <span className="text-sm text-foreground truncate flex-1">{user.username || 'User'}</span>
+              <button
+                onClick={handleLogout}
+                className="p-1.5 rounded hover:bg-accent/50 text-muted-foreground/50 hover:text-destructive transition-colors flex-shrink-0"
+                title="Logout"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function NavItem({
+  icon: Icon,
+  label,
+  active,
+  expanded,
+  onClick,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  active?: boolean;
+  expanded: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-2.5 w-full px-2 py-2 rounded-md transition-colors ${
+        active
+          ? 'bg-primary/10 text-primary'
+          : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+      }`}
+      title={expanded ? undefined : label}
+    >
+      <Icon className="h-[18px] w-[18px] flex-shrink-0" />
+      {expanded && <span className="text-sm font-medium truncate">{label}</span>}
+    </button>
+  );
+}

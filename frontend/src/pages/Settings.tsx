@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Sidebar } from '@/components/Sidebar';
 import { api } from '@/lib/api';
 import { AvatarEditor } from '@/components/AvatarEditor';
+import { useSocket } from '@/hooks/useSocket';
 import {
-  ArrowLeft,
   Save,
   Loader2,
   CheckCircle,
@@ -52,20 +52,31 @@ interface SettingsData {
 
 function SettingsSection({
   title,
+  description,
   icon: Icon,
   children,
+  className = '',
 }: {
   title: string;
+  description?: string;
   icon: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4 space-y-4">
-      <div className="flex items-center gap-2 pb-2 border-b border-border">
-        <Icon className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-semibold">{title}</h3>
+    <div className={`rounded-xl border border-border/60 bg-card/60 overflow-hidden ${className}`}>
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-border/40 bg-card/30">
+        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+          <Icon className="h-4 w-4 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold">{title}</h3>
+          {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
+        </div>
       </div>
-      {children}
+      <div className="p-5 space-y-4">
+        {children}
+      </div>
     </div>
   );
 }
@@ -80,10 +91,10 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1">
-      <label className="text-sm font-medium">{label}</label>
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium block">{label}</label>
       {description && (
-        <p className="text-xs text-muted-foreground">{description}</p>
+        <p className="text-xs text-muted-foreground/70">{description}</p>
       )}
       {children}
     </div>
@@ -91,7 +102,7 @@ function Field({
 }
 
 export function Settings() {
-  const navigate = useNavigate();
+  const { botStatus } = useSocket();
   const [settings, setSettings] = useState<SettingsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -109,6 +120,13 @@ export function Settings() {
       setLoading(false);
     });
   }, []);
+
+  // Auto-dismiss status after 4s
+  useEffect(() => {
+    if (!status) return;
+    const t = setTimeout(() => setStatus(null), 4000);
+    return () => clearTimeout(t);
+  }, [status]);
 
   const handleSave = async () => {
     if (!settings) return;
@@ -181,231 +199,240 @@ export function Settings() {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (!settings) return null;
-
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border px-4 py-2 flex items-center justify-between sticky top-0 bg-background z-10">
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate('/')}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <span className="font-semibold text-sm">Settings</span>
-        </div>
-        <Button onClick={handleSave} disabled={saving} size="sm">
-          {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-          Save
-        </Button>
-      </header>
+    <div className="h-screen flex flex-row bg-background overflow-hidden">
+      {/* Sidebar */}
+      <Sidebar
+        botConnected={botStatus.connected}
+        botName={botStatus.botName}
+        clientsInChannel={botStatus.clientsInChannel}
+        currentPage="settings"
+      />
 
-      {/* Status message */}
-      {status && (
-        <div className={`mx-4 mt-4 flex items-center gap-2 rounded-md px-3 py-2 text-sm ${
-          status.type === 'success'
-            ? 'bg-green-500/10 border border-green-500/20 text-green-400'
-            : 'bg-destructive/10 border border-destructive/20 text-destructive'
-        }`}>
-          {status.type === 'success' ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
-          {status.message}
-        </div>
-      )}
-
-      <div className="max-w-2xl mx-auto p-4 space-y-4">
-        {/* TS3 Server */}
-        <SettingsSection title="TeamSpeak 3 Server" icon={Server}>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Host / IP" description="IP address or hostname of the TS3 server">
-              <Input
-                value={settings.ts3server.host}
-                onChange={(e) => update('ts3server', 'host', e.target.value)}
-                placeholder="127.0.0.1"
-              />
-            </Field>
-            <Field label="Port" description="Voice port (default: 9987)">
-              <Input
-                type="number"
-                value={settings.ts3server.port}
-                onChange={(e) => update('ts3server', 'port', parseInt(e.target.value) || 9987)}
-              />
-            </Field>
+      {/* Main content */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Header bar */}
+        <header className="border-b border-border/50 px-6 py-3 flex items-center justify-between flex-shrink-0 glass z-10">
+          <div>
+            <h1 className="text-lg font-semibold">Settings</h1>
+            <p className="text-xs text-muted-foreground">Configure your bot, server connection, and integrations</p>
           </div>
-          <Field label="Server Password" description="Leave empty if no password is required">
-            <Input
-              type="password"
-              value={settings.ts3server.serverPassword}
-              onChange={(e) => update('ts3server', 'serverPassword', e.target.value)}
-              placeholder="Optional"
-            />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="ServerQuery Port" description="Default: 10011">
-              <Input
-                type="number"
-                value={settings.ts3server.queryPort}
-                onChange={(e) => update('ts3server', 'queryPort', parseInt(e.target.value) || 10011)}
-              />
-            </Field>
-            <Field label="ServerQuery User">
-              <Input
-                value={settings.ts3server.queryUser}
-                onChange={(e) => update('ts3server', 'queryUser', e.target.value)}
-                placeholder="serveradmin"
-              />
-            </Field>
-          </div>
-          <Field label="ServerQuery Password">
-            <Input
-              type="password"
-              value={settings.ts3server.queryPassword}
-              onChange={(e) => update('ts3server', 'queryPassword', e.target.value)}
-              placeholder="ServerQuery password"
-            />
-          </Field>
-        </SettingsSection>
-
-        {/* TS3AudioBot */}
-        <SettingsSection title="TS3AudioBot" icon={Wifi}>
-          <Field label="TS3AudioBot URL" description="REST API endpoint of TS3AudioBot">
-            <Input
-              value={settings.ts3audiobot.url}
-              onChange={(e) => update('ts3audiobot', 'url', e.target.value)}
-              placeholder="http://localhost:58913"
-            />
-          </Field>
-          <Field label="API Key" description="Optional API key for authentication">
-            <Input
-              type="password"
-              value={settings.ts3audiobot.apiKey}
-              onChange={(e) => update('ts3audiobot', 'apiKey', e.target.value)}
-              placeholder="Optional"
-            />
-          </Field>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleTestConnection}>
-              Test Connection
-            </Button>
-            {testResult && (
-              <span className={`text-xs flex items-center gap-1 ${testResult.ok ? 'text-green-400' : 'text-destructive'}`}>
-                {testResult.ok ? <CheckCircle className="h-3 w-3" /> : <AlertCircle className="h-3 w-3" />}
-                {testResult.message}
-              </span>
-            )}
-          </div>
-        </SettingsSection>
-
-        {/* Bot Settings */}
-        <SettingsSection title="Bot" icon={Bot}>
-          <Field label="Bot Name" description="Display name of the bot in TeamSpeak">
-            <Input
-              value={settings.bot.name}
-              onChange={(e) => update('bot', 'name', e.target.value)}
-              placeholder="MusicBot"
-            />
-          </Field>
-          <Field label="Default Channel" description="Channel name or ID to join on connect (leave empty for default channel)">
-            <Input
-              value={settings.bot.defaultChannel}
-              onChange={(e) => update('bot', 'defaultChannel', e.target.value)}
-              placeholder="Music"
-            />
-          </Field>
-          <Field label="Identity" description="TS3 identity string (leave empty for auto-generated)">
-            <Input
-              value={settings.bot.identity}
-              onChange={(e) => update('bot', 'identity', e.target.value)}
-              placeholder="Auto-generated"
-            />
-          </Field>
-          <Field label="Default Avatar" description="Avatar auto-applied to bots on connect">
-            <div className="flex items-center gap-3">
-              {settings.bot.defaultAvatar ? (
-                <img
-                  src={`${import.meta.env.VITE_API_URL || ''}/uploads/avatars/${settings.bot.defaultAvatar}`}
-                  alt="Default avatar"
-                  className="w-12 h-12 rounded-md object-cover border border-border"
-                />
-              ) : (
-                <div className="w-12 h-12 rounded-md border border-dashed border-border flex items-center justify-center">
-                  <ImageIcon className="h-5 w-5 text-muted-foreground/40" />
-                </div>
-              )}
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="relative" disabled={avatarUploading}>
-                  {avatarUploading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Upload className="h-3 w-3 mr-1" />}
-                  Upload
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="absolute inset-0 opacity-0 cursor-pointer"
-                    onChange={handleDefaultAvatarFileSelect}
-                    disabled={avatarUploading}
-                  />
-                </Button>
-                {settings.bot.defaultAvatar && (
-                  <Button variant="outline" size="sm" onClick={handleRemoveDefaultAvatar}>
-                    <Trash2 className="h-3 w-3 mr-1" /> Remove
-                  </Button>
-                )}
+          <div className="flex items-center gap-3">
+            {status && (
+              <div className={`flex items-center gap-1.5 text-sm animate-in ${
+                status.type === 'success' ? 'text-green-400' : 'text-destructive'
+              }`}>
+                {status.type === 'success' ? <CheckCircle className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                {status.message}
               </div>
+            )}
+            <Button onClick={handleSave} disabled={saving || !settings} size="sm">
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Save className="h-4 w-4 mr-1.5" />}
+              Save Changes
+            </Button>
+          </div>
+        </header>
+
+        {/* Scrollable settings content */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          </Field>
-        </SettingsSection>
+          ) : !settings ? (
+            <div className="flex items-center justify-center h-64">
+              <p className="text-muted-foreground">Failed to load settings</p>
+            </div>
+          ) : (
+            <div className="max-w-5xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* TS3 Server — spans both columns, uses 3-col inner grid */}
+              <SettingsSection title="TeamSpeak Server" description="Connection details for your TS3/TS6 server" icon={Server} className="lg:col-span-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <Field label="Host / IP" description="IP address or hostname">
+                    <Input
+                      value={settings.ts3server.host}
+                      onChange={(e) => update('ts3server', 'host', e.target.value)}
+                      placeholder="127.0.0.1"
+                    />
+                  </Field>
+                  <Field label="Voice Port" description="Default: 9987">
+                    <Input
+                      type="number"
+                      value={settings.ts3server.port}
+                      onChange={(e) => update('ts3server', 'port', parseInt(e.target.value) || 9987)}
+                    />
+                  </Field>
+                  <Field label="Server Password" description="Optional">
+                    <Input
+                      type="password"
+                      value={settings.ts3server.serverPassword}
+                      onChange={(e) => update('ts3server', 'serverPassword', e.target.value)}
+                      placeholder="Optional"
+                    />
+                  </Field>
+                  <Field label="ServerQuery Port" description="Default: 10011">
+                    <Input
+                      type="number"
+                      value={settings.ts3server.queryPort}
+                      onChange={(e) => update('ts3server', 'queryPort', parseInt(e.target.value) || 10011)}
+                    />
+                  </Field>
+                  <Field label="ServerQuery User">
+                    <Input
+                      value={settings.ts3server.queryUser}
+                      onChange={(e) => update('ts3server', 'queryUser', e.target.value)}
+                      placeholder="serveradmin"
+                    />
+                  </Field>
+                  <Field label="ServerQuery Password">
+                    <Input
+                      type="password"
+                      value={settings.ts3server.queryPassword}
+                      onChange={(e) => update('ts3server', 'queryPassword', e.target.value)}
+                      placeholder="ServerQuery password"
+                    />
+                  </Field>
+                </div>
+              </SettingsSection>
 
-        {/* Spotify */}
-        <SettingsSection title="Spotify" icon={Music}>
-          <p className="text-xs text-muted-foreground">
-            Create a Spotify app at developer.spotify.com to get these credentials.
-          </p>
-          <Field label="Client ID">
-            <Input
-              value={settings.spotify.clientId}
-              onChange={(e) => update('spotify', 'clientId', e.target.value)}
-              placeholder="Your Spotify Client ID"
-            />
-          </Field>
-          <Field label="Client Secret">
-            <Input
-              type="password"
-              value={settings.spotify.clientSecret}
-              onChange={(e) => update('spotify', 'clientSecret', e.target.value)}
-              placeholder="Your Spotify Client Secret"
-            />
-          </Field>
-          <Field label="Redirect URI">
-            <Input
-              value={settings.spotify.redirectUri}
-              onChange={(e) => update('spotify', 'redirectUri', e.target.value)}
-              placeholder="http://localhost:3001/api/spotify/callback"
-            />
-          </Field>
-        </SettingsSection>
+              {/* TS3AudioBot */}
+              <SettingsSection title="TS3AudioBot" description="REST API connection to TS3AudioBot" icon={Wifi}>
+                <Field label="Bot API URL" description="REST API endpoint of TS3AudioBot">
+                  <Input
+                    value={settings.ts3audiobot.url}
+                    onChange={(e) => update('ts3audiobot', 'url', e.target.value)}
+                    placeholder="http://localhost:58913"
+                  />
+                </Field>
+                <Field label="API Key" description="Optional API key for authentication">
+                  <Input
+                    type="password"
+                    value={settings.ts3audiobot.apiKey}
+                    onChange={(e) => update('ts3audiobot', 'apiKey', e.target.value)}
+                    placeholder="Optional"
+                  />
+                </Field>
+                <div className="flex items-center gap-3 pt-1">
+                  <Button variant="outline" size="sm" onClick={handleTestConnection}>
+                    <Wifi className="h-3.5 w-3.5 mr-1.5" />
+                    Test Connection
+                  </Button>
+                  {testResult && (
+                    <span className={`text-sm flex items-center gap-1.5 ${testResult.ok ? 'text-green-400' : 'text-destructive'}`}>
+                      {testResult.ok ? <CheckCircle className="h-3.5 w-3.5" /> : <AlertCircle className="h-3.5 w-3.5" />}
+                      {testResult.message}
+                    </span>
+                  )}
+                </div>
+              </SettingsSection>
 
-        {/* yt-dlp */}
-        <SettingsSection title="YouTube / yt-dlp" icon={Youtube}>
-          <Field label="yt-dlp Path" description="Path to the yt-dlp binary (default: yt-dlp in PATH)">
-            <Input
-              value={settings.ytdlp.path}
-              onChange={(e) => update('ytdlp', 'path', e.target.value)}
-              placeholder="yt-dlp"
-            />
-          </Field>
-          <Field label="Cookies File" description="Path to a Netscape-format cookies file for age-restricted content">
-            <Input
-              value={settings.ytdlp.cookiesFile}
-              onChange={(e) => update('ytdlp', 'cookiesFile', e.target.value)}
-              placeholder="Optional: /path/to/cookies.txt"
-            />
-          </Field>
-        </SettingsSection>
+              {/* Bot Settings */}
+              <SettingsSection title="Bot" description="Display name, channel, and avatar settings" icon={Bot}>
+                <Field label="Bot Name" description="Display name in TeamSpeak">
+                  <Input
+                    value={settings.bot.name}
+                    onChange={(e) => update('bot', 'name', e.target.value)}
+                    placeholder="MusicBot"
+                  />
+                </Field>
+                <Field label="Default Channel" description="Channel to join on connect">
+                  <Input
+                    value={settings.bot.defaultChannel}
+                    onChange={(e) => update('bot', 'defaultChannel', e.target.value)}
+                    placeholder="Music"
+                  />
+                </Field>
+                <Field label="Identity" description="TS3 identity string (leave empty for auto-generated)">
+                  <Input
+                    value={settings.bot.identity}
+                    onChange={(e) => update('bot', 'identity', e.target.value)}
+                    placeholder="Auto-generated"
+                  />
+                </Field>
+                <Field label="Default Avatar" description="Avatar auto-applied on connect">
+                  <div className="flex items-center gap-4 pt-1">
+                    {settings.bot.defaultAvatar ? (
+                      <img
+                        src={`${import.meta.env.VITE_API_URL || ''}/uploads/avatars/${settings.bot.defaultAvatar}`}
+                        alt="Default avatar"
+                        className="w-14 h-14 rounded-lg object-cover border border-border/60 shadow-sm"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 rounded-lg border border-dashed border-border/60 flex items-center justify-center bg-secondary/20">
+                        <ImageIcon className="h-5 w-5 text-muted-foreground/30" />
+                      </div>
+                    )}
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="relative" disabled={avatarUploading}>
+                        {avatarUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Upload className="h-3.5 w-3.5 mr-1.5" />}
+                        Upload
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="absolute inset-0 opacity-0 cursor-pointer"
+                          onChange={handleDefaultAvatarFileSelect}
+                          disabled={avatarUploading}
+                        />
+                      </Button>
+                      {settings.bot.defaultAvatar && (
+                        <Button variant="outline" size="sm" onClick={handleRemoveDefaultAvatar}>
+                          <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Remove
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </Field>
+              </SettingsSection>
+
+              {/* Spotify */}
+              <SettingsSection title="Spotify" description="Spotify API credentials for track metadata" icon={Music}>
+                <Field label="Client ID">
+                  <Input
+                    value={settings.spotify.clientId}
+                    onChange={(e) => update('spotify', 'clientId', e.target.value)}
+                    placeholder="Your Spotify Client ID"
+                  />
+                </Field>
+                <Field label="Client Secret">
+                  <Input
+                    type="password"
+                    value={settings.spotify.clientSecret}
+                    onChange={(e) => update('spotify', 'clientSecret', e.target.value)}
+                    placeholder="Your Spotify Client Secret"
+                  />
+                </Field>
+                <Field label="Redirect URI">
+                  <Input
+                    value={settings.spotify.redirectUri}
+                    onChange={(e) => update('spotify', 'redirectUri', e.target.value)}
+                    placeholder="http://localhost:3001/api/spotify/callback"
+                  />
+                </Field>
+              </SettingsSection>
+
+              {/* yt-dlp */}
+              <SettingsSection title="YouTube / yt-dlp" description="YouTube download settings" icon={Youtube}>
+                <Field label="yt-dlp Path" description="Path to the yt-dlp binary (default: yt-dlp in PATH)">
+                  <Input
+                    value={settings.ytdlp.path}
+                    onChange={(e) => update('ytdlp', 'path', e.target.value)}
+                    placeholder="yt-dlp"
+                  />
+                </Field>
+                <Field label="Cookies File" description="Netscape-format cookies file for age-restricted content">
+                  <Input
+                    value={settings.ytdlp.cookiesFile}
+                    onChange={(e) => update('ytdlp', 'cookiesFile', e.target.value)}
+                    placeholder="Optional: /path/to/cookies.txt"
+                  />
+                </Field>
+              </SettingsSection>
+
+              {/* Bottom spacer */}
+              <div className="h-4" />
+            </div>
+          )}
+        </div>
       </div>
 
       {avatarEditFile && (

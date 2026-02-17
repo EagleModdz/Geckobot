@@ -115,8 +115,8 @@ export const api = {
     request(`/api/bot/${id}/disconnect`, { method: 'POST' }),
 
   // Player
-  play: (url?: string) =>
-    request('/api/player/play', { method: 'POST', body: JSON.stringify({ url }) }),
+  play: (url?: string, meta?: { title?: string; artist?: string; thumbnail?: string; duration?: number; source?: string }) =>
+    request('/api/player/play', { method: 'POST', body: JSON.stringify({ url, ...meta }) }),
   pause: () => request('/api/player/pause', { method: 'POST' }),
   stop: () => request('/api/player/stop', { method: 'POST' }),
   skip: () => request('/api/player/skip', { method: 'POST' }),
@@ -144,8 +144,10 @@ export const api = {
       queue: { id: string; title: string; artist: string; duration: number; thumbnail: string; url: string; source: string; addedBy: string }[];
       currentTrack: { id: string; title: string } | null;
     }>('/api/queue'),
-  addToQueue: (track: { title: string; artist: string; duration: number; thumbnail: string; url: string; source: string }) =>
-    request('/api/queue/add', { method: 'POST', body: JSON.stringify(track) }),
+  addToQueue: (track: { title: string; artist: string; duration: number; thumbnail: string; url: string; source: string }, autoPlay: boolean = false) =>
+    request('/api/queue/add', { method: 'POST', body: JSON.stringify({ ...track, autoPlay }) }),
+  playQueue: () =>
+    request('/api/queue/play', { method: 'POST' }),
   removeFromQueue: (id: string) =>
     request(`/api/queue/${id}`, { method: 'DELETE' }),
   moveInQueue: (fromIndex: number, toIndex: number) =>

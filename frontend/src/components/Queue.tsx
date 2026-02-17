@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'react';
-import { Trash2, GripVertical, ListMusic, X } from 'lucide-react';
+import { Trash2, GripVertical, ListMusic, Play, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { api } from '@/lib/api';
 import { toast } from '@/hooks/useToast';
@@ -17,9 +17,10 @@ interface QueueItem {
 
 interface QueueProps {
   items: QueueItem[];
+  onClose?: () => void;
 }
 
-export function Queue({ items }: QueueProps) {
+export function Queue({ items, onClose }: QueueProps) {
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
 
@@ -38,6 +39,15 @@ export function Queue({ items }: QueueProps) {
       toast.info('Queue cleared');
     } catch {
       toast.error('Failed to clear queue');
+    }
+  };
+
+  const handlePlayQueue = async () => {
+    try {
+      await api.playQueue();
+      toast.success('Playing queue');
+    } catch {
+      toast.error('Failed to play queue');
     }
   };
 
@@ -71,12 +81,25 @@ export function Queue({ items }: QueueProps) {
             </span>
           )}
         </div>
-        {items.length > 0 && (
-          <Button variant="ghost" size="sm" className="text-xs h-7 text-muted-foreground hover:text-destructive" onClick={handleClear}>
-            <X className="h-3 w-3 mr-1" />
-            Clear
-          </Button>
-        )}
+        <div className="flex items-center gap-1">
+          {items.length > 0 && (
+            <>
+              <Button variant="ghost" size="sm" className="text-xs h-7 text-primary hover:text-primary" onClick={handlePlayQueue}>
+                <Play className="h-3 w-3 mr-1" />
+                Play
+              </Button>
+              <Button variant="ghost" size="sm" className="text-xs h-7 text-muted-foreground hover:text-destructive" onClick={handleClear}>
+                <X className="h-3 w-3 mr-1" />
+                Clear
+              </Button>
+            </>
+          )}
+          {onClose && (
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto">

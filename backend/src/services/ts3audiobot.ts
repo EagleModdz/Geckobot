@@ -24,6 +24,8 @@ class TS3AudioBotService {
   private available = false;
   private lastAvailableCheck = 0;
   private pollInFlight = false;
+  /** Track metadata stored when playing directly (not from queue) */
+  private directPlayMeta: { url: string; title: string; artist: string; thumbnail: string; duration: number; source: string } | null = null;
 
   getSelectedBotId(): number {
     return this.selectedBotId;
@@ -262,6 +264,10 @@ class TS3AudioBotService {
     return this.disconnectBot(this.selectedBotId);
   }
 
+  setDirectPlayMeta(meta: { url: string; title: string; artist: string; thumbnail: string; duration: number; source: string } | null) {
+    this.directPlayMeta = meta;
+  }
+
   async play(url: string): Promise<{ ok: boolean; error?: string }> {
     try {
       // v0.14: use parenthesis format with encoded URL
@@ -271,6 +277,7 @@ class TS3AudioBotService {
     } catch (error: unknown) {
       const msg = this.extractError(error);
       console.error('Failed to play:', msg);
+      this.directPlayMeta = null;
       return { ok: false, error: msg };
     }
   }
@@ -292,7 +299,11 @@ class TS3AudioBotService {
   }
 
   async seek(position: number): Promise<boolean> {
-    try { await this.botApiWithArg('seek', String(position)); return true; } catch { return false; }
+    try {
+      const sec = Math.max(0, Math.round(position));
+      await this.botApiWithArg('seek', String(sec));
+      return true;
+    } catch { return false; }
   }
 
   async setBotName(name: string): Promise<boolean> {
@@ -361,10 +372,31 @@ class TS3AudioBotService {
 
       const isPlaying = !!title && !paused;
 
+      // Merge stored metadata (thumbnail, artist) from direct play or queue
+      // Lazy-import to avoid circular dependency
+      const { queueService } = await import('./queue');
+      const queueTrack = queueService.getCurrentTrack();
+
+      // Try to find matching metadata: first directPlayMeta, then queue current track
+      const meta = this.directPlayMeta || null;
+      const enrichment = meta?.thumbnail
+        ? meta
+        : queueTrack?.thumbnail
+          ? queueTrack
+          : meta;
+
       return {
         isPlaying,
         currentTrack: title
-          ? { id: link || title, title, artist: '', duration: songData?.Length || 0, thumbnail: '', url: link, source: songData?.AudioType || 'youtube' }
+          ? {
+              id: link || title,
+              title: enrichment?.title || title,
+              artist: enrichment?.artist || '',
+              duration: songData?.Length || enrichment?.duration || 0,
+              thumbnail: enrichment?.thumbnail || '',
+              url: link,
+              source: enrichment?.source || songData?.AudioType || 'youtube',
+            }
           : null,
         position: songData?.Position || 0,
         duration: songData?.Length || 0,

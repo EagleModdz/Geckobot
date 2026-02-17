@@ -12,7 +12,7 @@ const ToastViewport = React.forwardRef<
   <ToastPrimitive.Viewport
     ref={ref}
     className={cn(
-      'fixed bottom-0 right-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:max-w-[380px]',
+      'fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex max-h-screen w-full flex-col gap-2 p-4 sm:max-w-[360px]',
       className,
     )}
     {...props}
@@ -31,11 +31,11 @@ const Toast = React.forwardRef<
     className={cn(
       'group pointer-events-auto relative flex w-full items-center justify-between overflow-hidden rounded-lg border p-3 pr-6 shadow-lg transition-all',
       'data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none',
-      'data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-bottom-full',
+      'data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full',
       variant === 'error'
-        ? 'border-red-500/30 bg-red-500/10 text-red-300'
+        ? 'border-destructive/30 bg-destructive/10 text-destructive'
         : variant === 'success'
-          ? 'border-green-500/30 bg-green-500/10 text-green-300'
+          ? 'border-primary/30 bg-primary/10 text-primary'
           : 'border-border bg-card text-card-foreground',
       className,
     )}

@@ -7,12 +7,16 @@ const router = Router();
 router.use(authMiddleware);
 
 router.post('/play', async (req: Request, res: Response) => {
-  const { url } = req.body;
+  const { url, title, artist, thumbnail, duration, source } = req.body;
   if (!url) {
     // Resume playback
     const success = await ts3audiobot.pause(); // toggle pause
     res.json({ message: success ? 'Playback resumed' : 'Failed to resume' });
     return;
+  }
+  // Store track metadata so getPlayerStatus can return thumbnail/artist
+  if (title) {
+    ts3audiobot.setDirectPlayMeta({ url, title, artist: artist || '', thumbnail: thumbnail || '', duration: duration || 0, source: source || 'youtube' });
   }
   const result = await ts3audiobot.play(url);
   if (result.ok) {

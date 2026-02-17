@@ -34,7 +34,7 @@ class QueueService extends EventEmitter {
     return null;
   }
 
-  async addTrack(track: Track, addedBy: string = 'Web', botId?: number): Promise<QueueItem> {
+  async addTrack(track: Track, addedBy: string = 'Web', botId?: number, autoPlay: boolean = true): Promise<QueueItem> {
     const data = this.getQueueData(botId);
     const item: QueueItem = {
       ...track,
@@ -46,12 +46,21 @@ class QueueService extends EventEmitter {
     const resolvedBotId = botId ?? ts3audiobot.getSelectedBotId();
     this.emit('queue:updated', { botId: resolvedBotId, queue: data.queue });
 
-    // If nothing is playing, start playing this track
-    if (!data.isPlaying) {
+    // If nothing is playing and autoPlay is enabled, start playing this track
+    if (autoPlay && !data.isPlaying) {
       await this.playNext(botId);
     }
 
     return item;
+  }
+
+  async playQueue(botId?: number): Promise<boolean> {
+    const data = this.getQueueData(botId);
+    if (data.queue.length === 0) return false;
+    // Start from the beginning
+    data.currentIndex = -1;
+    data.isPlaying = false;
+    return this.playNext(botId);
   }
 
   async removeTrack(id: string, botId?: number): Promise<boolean> {
