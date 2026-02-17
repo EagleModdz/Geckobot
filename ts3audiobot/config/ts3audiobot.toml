@@ -1,0 +1,68 @@
+[bot]
+run = false
+
+[bot.connect]
+server_password = { pw = "", hashed = false, autohash = false }
+channel_password = { pw = "", hashed = false, autohash = false }
+client_version = { build = "", platform = "", sign = "" }
+address = ""
+channel = ""
+name = "MusicBot"
+
+[bot.connect.identity]
+key = ""
+offset = 0
+level = -1
+
+[bot.audio]
+bitrate = 48000
+volume = { default = 50.0, min = 0.0, max = 100.0 }
+max_user_volume = 100.0
+send_mode = "voice"
+
+[bot.commands]
+matcher = "ic3"
+
+[bot.reconnect]
+ontimeout = ["1s", "2s", "5s", "10s", "30s", "1m", "5m", "repeat last"]
+onerror = ["30s", "repeat last"]
+
+[tools]
+youtube-dl = { path = "" }
+ffmpeg = { path = "/usr/bin/ffmpeg" }
+
+[web]
+hosts = ["*"]
+port = 58913
+
+[web.api]
+enabled = true
+command_complexity = 64
+matcher = "exact"
+
+[web.api.ip]
+address = "0.0.0.0"
+
+[web.interface]
+enabled = false
+
+[rights]
+path = "rights.toml"
+
+[rights.default]
+"+" = ["*"]
+
+[configs]
+bots_path = "bots"
+
+[db]
+path = "ts3audiobot.db"
+
+[factories]
+media = { path = "" }
+
+[factories.youtube]
+prefer_resolver = "Internal"
+
+[plugins]
+path = "plugins"

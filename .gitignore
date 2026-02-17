@@ -1,0 +1,28 @@
+node_modules/
+dist/
+build/
+.env
+*.log
+.DS_Store
+Thumbs.db
+
+# Runtime / binaries
+ts3audiobot/bin/
+ts3audiobot/data/
+
+# Backend data
+backend/data/
+backend/dist/
+
+# TS3AudioBot source (separate repo / submodule)
+ts3audiobot-src/
+
+# Log files
+ts3audiobot-log.txt
+
+# Claude Code local settings
+.claude/
+
+# Frontend lock file (large, regenerated from package.json)
+frontend/package-lock.json
+
