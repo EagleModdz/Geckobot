@@ -37,8 +37,8 @@ services:
 
   ts3audiobot:
     build:
-      context: ./ts3audiobot
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ts3audiobot/Dockerfile
     volumes:
       - ts3audiobot-data:/app/data
     environment:

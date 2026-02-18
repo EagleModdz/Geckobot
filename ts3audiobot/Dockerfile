@@ -1,16 +1,25 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+
+WORKDIR /src
+
+# Copy modified TS3AudioBot source (from submodule)
+COPY ts3audiobot-src/ .
+
+# Build and publish
+RUN dotnet publish TS3AudioBot -c Release -r linux-x64 --self-contained -o /app/publish
+
+# --- Runtime image ---
 FROM mcr.microsoft.com/dotnet/runtime:8.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget unzip ffmpeg libopus-dev libopus0 libssl-dev ca-certificates \
+    wget ffmpeg libopus-dev libopus0 libssl-dev ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Download TS3AudioBot (develop branch for TS6 server support)
-RUN wget -q "https://splamy.de/api/nightly/projects/ts3ab/develop_linux_x64/download" -O ts3audiobot.zip \
-    && unzip ts3audiobot.zip -d /app \
-    && rm ts3audiobot.zip \
-    && chmod +x /app/TS3AudioBot
+COPY --from=build /app/publish .
+
+RUN chmod +x /app/TS3AudioBot
 
 # Create data directory and copy config
 RUN mkdir -p /app/bots/default
