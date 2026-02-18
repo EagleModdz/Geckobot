@@ -11,9 +11,21 @@ interface SidebarProps {
   onOpenChannelBrowser?: () => void;
   onOpenBotManager?: () => void;
   currentPage?: 'dashboard' | 'settings';
+  ping?: number;
 }
 
-export function Sidebar({ botConnected, botName, clientsInChannel, onOpenChannelBrowser, onOpenBotManager, currentPage = 'dashboard' }: SidebarProps) {
+function PingDot({ ping }: { ping: number }) {
+  if (ping < 0) return null;
+  const color = ping < 80 ? 'bg-green-500' : ping < 200 ? 'bg-yellow-500' : 'bg-red-500';
+  const label = ping < 80 ? 'Good' : ping < 200 ? 'OK' : 'Poor';
+  return (
+    <span className="flex items-center gap-1" title={`Connection: ${label} (${ping}ms)`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${color}`} />
+    </span>
+  );
+}
+
+export function Sidebar({ botConnected, botName, clientsInChannel, onOpenChannelBrowser, onOpenBotManager, currentPage = 'dashboard', ping = -1 }: SidebarProps) {
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
   const [pinned, setPinned] = useState(() => localStorage.getItem('sidebarPinned') === 'true');
@@ -67,8 +79,20 @@ export function Sidebar({ botConnected, botName, clientsInChannel, onOpenChannel
       <div className="px-3 mb-2 flex-shrink-0">
         <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-md">
           <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${botConnected ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]' : 'bg-red-500'}`} />
-          {expanded && (
-            <span className="text-sm text-muted-foreground truncate">{botName || 'Bot'}</span>
+          {expanded ? (
+            <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+              <span className="text-sm text-muted-foreground truncate">{botName || 'Bot'}</span>
+              {ping >= 0 && (
+                <span
+                  className={`text-[10px] font-mono flex-shrink-0 ${ping < 80 ? 'text-green-500' : ping < 200 ? 'text-yellow-500' : 'text-red-500'}`}
+                  title="API latency to TS3AudioBot"
+                >
+                  {ping}ms
+                </span>
+              )}
+            </div>
+          ) : (
+            <PingDot ping={ping} />
           )}
         </div>
       </div>

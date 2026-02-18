@@ -63,6 +63,7 @@ io.on('connection', async (socket) => {
     socket.emit('bot:channels', result.channels);
     socket.emit('bot:list', result.botList);
     socket.emit('bot:selected', ts3audiobot.getSelectedBotId());
+    socket.emit('bot:ping', result.ping);
 
     const queue = queueService.getQueue();
     socket.emit('player:queue', queue);
@@ -74,13 +75,15 @@ io.on('connection', async (socket) => {
 });
 
 // Broadcast status updates every 2 seconds
-// Uses pollStatus() which skips when TS3AudioBot is unreachable (cached check)
-// and prevents piling up requests if previous poll is still in-flight
 let lastPlayerStatus = '';
 let lastBotStatus = '';
 let lastChannels = '';
 let lastBotList = '';
 let lastSelectedBotId = -1;
+let lastPing = -1;
+
+// Song-end detection state
+let wasPlaying = false;
 
 setInterval(async () => {
   if (io.engine.clientsCount === 0) return;
@@ -88,6 +91,20 @@ setInterval(async () => {
   const result = await ts3audiobot.pollStatus();
   if (!result) return; // TS3AudioBot unreachable or poll in-flight
 
+  // --- Song-end detection ---
+  // When the bot transitions from playing → stopped AND the queue is still
+  // "driving" playback (not a manual stop), automatically advance the queue.
+  const isNowPlaying = result.player.isPlaying;
+  if (wasPlaying && !isNowPlaying && queueService.isQueueDriving()) {
+    // Guard against false triggers shortly after skip/playNext (5s cooldown)
+    const timeSinceLastPlay = Date.now() - queueService.getLastPlayTime();
+    if (timeSinceLastPlay > 5000) {
+      queueService.playNext().catch(() => {});
+    }
+  }
+  wasPlaying = isNowPlaying;
+
+  // --- Broadcast changed state ---
   const playerJson = JSON.stringify(result.player);
   if (playerJson !== lastPlayerStatus) {
     lastPlayerStatus = playerJson;
@@ -106,24 +123,27 @@ setInterval(async () => {
     io.emit('bot:channels', result.channels);
   }
 
-  // Emit bot list updates
   const botListJson = JSON.stringify(result.botList);
   if (botListJson !== lastBotList) {
     lastBotList = botListJson;
     io.emit('bot:list', result.botList);
   }
 
-  // Emit selected bot changes
   const selectedBotId = ts3audiobot.getSelectedBotId();
   if (selectedBotId !== lastSelectedBotId) {
     lastSelectedBotId = selectedBotId;
     io.emit('bot:selected', selectedBotId);
   }
+
+  // Emit ping when it changes by more than 20ms (avoid noise)
+  if (Math.abs(result.ping - lastPing) > 20) {
+    lastPing = result.ping;
+    io.emit('bot:ping', result.ping);
+  }
 }, 2000);
 
-// Queue events -> Socket.IO (now include botId)
+// Queue events -> Socket.IO (only for selected bot)
 queueService.on('queue:updated', ({ botId, queue }) => {
-  // Only emit to clients if it's the selected bot's queue
   if (botId === ts3audiobot.getSelectedBotId()) {
     io.emit('player:queue', queue);
   }
@@ -143,7 +163,6 @@ queueService.on('track:started', (track) => {
 server.listen(config.port, () => {
   console.log(`Backend server running on port ${config.port}`);
 
-  // Check TS3AudioBot availability
   const s = settingsService.get();
   ts3audiobot.isAvailable().then((available) => {
     if (available) {

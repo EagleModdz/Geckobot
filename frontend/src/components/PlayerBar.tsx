@@ -1,4 +1,4 @@
-import { Play, Pause, SkipBack, SkipForward, Square, Volume2, VolumeX, Repeat, Repeat1, Shuffle, ListMusic, Music } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Square, Volume2, VolumeX, Repeat, Repeat1, Shuffle, ListMusic, Music, Radio } from 'lucide-react';
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
 import { formatDuration } from '@/lib/utils';
@@ -18,6 +18,7 @@ interface PlayerBarProps {
     artist: string;
     thumbnail: string;
     source: string;
+    isLive?: boolean;
   } | null;
   queueCount: number;
   queueOpen: boolean;
@@ -37,6 +38,9 @@ export function PlayerBar({ isPlaying, position, duration, volume, track, queueC
   const lastServerPos = useRef(position);
   const lastServerTime = useRef(Date.now());
 
+  // Live stream: duration is 0 while playing
+  const isLive = track?.isLive === true || (isPlaying && duration === 0);
+
   // Sync when server sends a new position
   useEffect(() => {
     lastServerPos.current = position;
@@ -44,16 +48,16 @@ export function PlayerBar({ isPlaying, position, duration, volume, track, queueC
     setInterpolatedPos(position);
   }, [position]);
 
-  // Tick forward while playing (pause ticking while user is dragging)
+  // Tick forward while playing (pause ticking while user is dragging or stream is live)
   useEffect(() => {
-    if (!isPlaying || !duration || seekingPos !== null) return;
+    if (!isPlaying || !duration || isLive || seekingPos !== null) return;
     const interval = setInterval(() => {
       const elapsed = (Date.now() - lastServerTime.current) / 1000;
       const newPos = Math.min(lastServerPos.current + elapsed, duration);
       setInterpolatedPos(newPos);
     }, 500);
     return () => clearInterval(interval);
-  }, [isPlaying, duration, seekingPos]);
+  }, [isPlaying, duration, isLive, seekingPos]);
 
   const displayPosition = seekingPos ?? (isPlaying ? interpolatedPos : position);
   const displayVolume = localVolume ?? volume;
@@ -108,7 +112,6 @@ export function PlayerBar({ isPlaying, position, duration, volume, track, queueC
   const handleSeekCommit = (value: number[]) => {
     const pos = value[0];
     setSeekingPos(null);
-    // Update interpolation base so it doesn't jump back
     lastServerPos.current = pos;
     lastServerTime.current = Date.now();
     setInterpolatedPos(pos);
@@ -135,25 +138,40 @@ export function PlayerBar({ isPlaying, position, duration, volume, track, queueC
 
   return (
     <div className="player-bar-glass border-t border-border/50 px-4 py-2 flex flex-col gap-1">
-      {/* Progress bar */}
+      {/* Progress bar / Live indicator */}
       <div className="flex items-center gap-2">
-        <span className="text-[10px] text-muted-foreground w-9 text-right tabular-nums">{formatDuration(displayPosition)}</span>
-        <Slider
-          value={[displayPosition]}
-          max={duration || 100}
-          step={1}
-          onValueChange={handleSeekChange}
-          onValueCommit={handleSeekCommit}
-          className="cursor-pointer flex-1"
-        />
-        <span className="text-[10px] text-muted-foreground w-9 tabular-nums">{formatDuration(duration)}</span>
+        {isLive ? (
+          <>
+            <span className="flex items-center gap-1 text-[10px] font-semibold text-red-500 w-9 justify-end">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              LIVE
+            </span>
+            <div className="flex-1 h-1 rounded-full bg-red-500/20 overflow-hidden">
+              <div className="h-full bg-red-500/60 animate-pulse" style={{ width: '100%' }} />
+            </div>
+            <span className="text-[10px] text-muted-foreground w-9 tabular-nums">∞</span>
+          </>
+        ) : (
+          <>
+            <span className="text-[10px] text-muted-foreground w-9 text-right tabular-nums">{formatDuration(displayPosition)}</span>
+            <Slider
+              value={[displayPosition]}
+              max={duration || 100}
+              step={1}
+              onValueChange={handleSeekChange}
+              onValueCommit={handleSeekCommit}
+              className="cursor-pointer flex-1"
+            />
+            <span className="text-[10px] text-muted-foreground w-9 tabular-nums">{formatDuration(duration)}</span>
+          </>
+        )}
       </div>
 
       {/* Main bar row */}
       <div className="flex items-center gap-3">
         {/* Left: Track info */}
         <div className="flex items-center gap-3 w-56 min-w-0 flex-shrink-0">
-          <div className="w-11 h-11 rounded-md overflow-hidden bg-secondary/50 flex-shrink-0">
+          <div className="w-11 h-11 rounded-md overflow-hidden bg-secondary/50 flex-shrink-0 relative">
             {track?.thumbnail ? (
               <img src={track.thumbnail} alt={track.title} className="w-full h-full object-cover" />
             ) : (
@@ -161,11 +179,19 @@ export function PlayerBar({ isPlaying, position, duration, volume, track, queueC
                 <Music className="w-5 h-5 text-muted-foreground/50" />
               </div>
             )}
+            {isLive && (
+              <span className="absolute bottom-0 left-0 right-0 text-center text-[8px] font-bold bg-red-600 text-white leading-tight py-px">
+                LIVE
+              </span>
+            )}
           </div>
           {track ? (
             <div className="min-w-0">
               <p className="text-sm font-medium truncate">{track.title}</p>
-              <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
+              <p className="text-xs text-muted-foreground truncate flex items-center gap-1">
+                {isLive && <Radio className="h-3 w-3 text-red-500 flex-shrink-0" />}
+                {track.artist}
+              </p>
             </div>
           ) : (
             <p className="text-xs text-muted-foreground">Nothing playing</p>
@@ -182,7 +208,7 @@ export function PlayerBar({ isPlaying, position, duration, volume, track, queueC
           >
             <Shuffle className="h-3.5 w-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrevious}>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handlePrevious} disabled={isLive}>
             <SkipBack className="h-4 w-4" />
           </Button>
           <Button

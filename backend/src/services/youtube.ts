@@ -37,18 +37,31 @@ export async function searchYouTube(
     );
 
     const lines = stdout.trim().split('\n').filter(Boolean);
-    const tracks = lines.map((line) => {
-      const data = JSON.parse(line);
-      return {
-        id: data.id || data.url,
-        title: data.title || 'Unknown',
-        artist: data.uploader || data.channel || '',
-        duration: data.duration || 0,
-        thumbnail: data.thumbnail || data.thumbnails?.[0]?.url || '',
-        url: `https://www.youtube.com/watch?v=${data.id || data.url}`,
-        source: 'youtube' as const,
-      };
-    });
+    const tracks = lines
+      .map((line) => {
+        try { return JSON.parse(line); } catch { return null; }
+      })
+      .filter((data): data is Record<string, unknown> => {
+        if (!data) return false;
+        // Filter out channels and playlists — only keep actual video entries
+        if (data._type === 'playlist') return false;
+        if (data.ie_key === 'YoutubeTab') return false;
+        if (!data.id) return false;
+        return true;
+      })
+      .map((data) => {
+        const isLive = data.is_live === true || data.live_status === 'is_live';
+        return {
+          id: String(data.id),
+          title: String(data.title || 'Unknown'),
+          artist: String(data.uploader || data.channel || ''),
+          duration: isLive ? 0 : (typeof data.duration === 'number' ? data.duration : 0),
+          thumbnail: String(data.thumbnail || (Array.isArray(data.thumbnails) ? data.thumbnails[0]?.url : '') || ''),
+          url: `https://www.youtube.com/watch?v=${data.id}`,
+          source: 'youtube' as const,
+          isLive,
+        };
+      });
     return { tracks };
   } catch (error: unknown) {
     const err = error as NodeJS.ErrnoException;

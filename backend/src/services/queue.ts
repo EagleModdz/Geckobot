@@ -11,6 +11,7 @@ interface QueueData {
 
 class QueueService extends EventEmitter {
   private queues = new Map<number, QueueData>();
+  private lastPlayNextTime = 0;
 
   private getQueueData(botId?: number): QueueData {
     const id = botId ?? ts3audiobot.getSelectedBotId();
@@ -32,6 +33,17 @@ class QueueService extends EventEmitter {
       return data.queue[data.currentIndex];
     }
     return null;
+  }
+
+  /** Returns true when the queue service is actively driving playback (not direct play) */
+  isQueueDriving(botId?: number): boolean {
+    const data = this.getQueueData(botId);
+    return data.isPlaying && data.currentIndex >= 0;
+  }
+
+  /** Timestamp of last playNext() call — used to debounce song-end detection */
+  getLastPlayTime(): number {
+    return this.lastPlayNextTime;
   }
 
   async addTrack(track: Track, addedBy: string = 'Web', botId?: number, autoPlay: boolean = true): Promise<QueueItem> {
@@ -110,6 +122,27 @@ class QueueService extends EventEmitter {
     return true;
   }
 
+  /** Fisher-Yates shuffle of the remaining (not-yet-played) queue tracks */
+  shuffleQueue(botId?: number): boolean {
+    const data = this.getQueueData(botId);
+    if (data.queue.length <= 1) return false;
+
+    // Keep already-played tracks in place; shuffle only the upcoming ones
+    const startIdx = data.currentIndex + 1;
+    const upcoming = data.queue.slice(startIdx);
+
+    for (let i = upcoming.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [upcoming[i], upcoming[j]] = [upcoming[j], upcoming[i]];
+    }
+
+    data.queue.splice(startIdx, upcoming.length, ...upcoming);
+
+    const resolvedBotId = botId ?? ts3audiobot.getSelectedBotId();
+    this.emit('queue:updated', { botId: resolvedBotId, queue: data.queue });
+    return true;
+  }
+
   async playNext(botId?: number): Promise<boolean> {
     const data = this.getQueueData(botId);
     data.currentIndex++;
@@ -121,6 +154,11 @@ class QueueService extends EventEmitter {
     }
 
     const track = data.queue[data.currentIndex];
+
+    // Clear any stale direct-play metadata so queue track metadata takes over
+    ts3audiobot.setDirectPlayMeta(null);
+
+    this.lastPlayNextTime = Date.now();
     const result = await ts3audiobot.play(track.url);
     data.isPlaying = result.ok;
     if (result.ok) {

@@ -56,6 +56,15 @@ router.put('/move', (req: Request, res: Response) => {
   }
 });
 
+router.post('/shuffle', (_req: Request, res: Response) => {
+  const success = queueService.shuffleQueue();
+  if (success) {
+    res.json({ message: 'Queue shuffled', queue: queueService.getQueue() });
+  } else {
+    res.status(400).json({ error: 'Not enough tracks to shuffle' });
+  }
+});
+
 router.delete('/', (_req: Request, res: Response) => {
   queueService.clear();
   res.json({ message: 'Queue cleared' });

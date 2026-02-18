@@ -2,11 +2,12 @@ export interface Track {
   id: string;
   title: string;
   artist: string;
-  duration: number; // seconds
+  duration: number; // seconds; 0 = live stream
   thumbnail: string;
   url: string;
   source: 'youtube' | 'spotify';
   spotifyUri?: string;
+  isLive?: boolean;
 }
 
 export interface QueueItem extends Track {

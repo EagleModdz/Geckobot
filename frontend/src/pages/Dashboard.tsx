@@ -9,7 +9,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { useState } from 'react';
 
 export function Dashboard() {
-  const { connected, playerStatus, botStatus, queue, channels, botList, selectedBotId } = useSocket();
+  const { playerStatus, botStatus, queue, channels, botList, selectedBotId, ping } = useSocket();
   const [channelBrowserOpen, setChannelBrowserOpen] = useState(false);
   const [botManagerOpen, setBotManagerOpen] = useState(false);
   const [queueOpen, setQueueOpen] = useState(true);
@@ -24,6 +24,7 @@ export function Dashboard() {
         onOpenChannelBrowser={() => setChannelBrowserOpen(true)}
         onOpenBotManager={() => setBotManagerOpen(true)}
         currentPage="dashboard"
+        ping={ping}
       />
 
       {/* Right side: main content + player bar */}
@@ -78,6 +79,7 @@ export function Dashboard() {
         onOpenChange={setBotManagerOpen}
         botList={botList}
         selectedBotId={selectedBotId}
+        activeBotName={botStatus.botName}
       />
     </div>
   );

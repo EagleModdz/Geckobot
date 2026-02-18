@@ -1,5 +1,5 @@
 import { useRef, useCallback } from 'react';
-import { Trash2, GripVertical, ListMusic, Play, X } from 'lucide-react';
+import { Trash2, GripVertical, ListMusic, Play, X, Shuffle } from 'lucide-react';
 import { Button } from './ui/button';
 import { api } from '@/lib/api';
 import { toast } from '@/hooks/useToast';
@@ -51,6 +51,15 @@ export function Queue({ items, onClose }: QueueProps) {
     }
   };
 
+  const handleShuffle = async () => {
+    try {
+      await api.shuffleQueue();
+      toast.info('Queue shuffled');
+    } catch {
+      toast.error('Failed to shuffle queue');
+    }
+  };
+
   const handleDragStart = useCallback((index: number) => {
     dragItem.current = index;
   }, []);
@@ -87,6 +96,9 @@ export function Queue({ items, onClose }: QueueProps) {
               <Button variant="ghost" size="sm" className="text-xs h-7 text-primary hover:text-primary" onClick={handlePlayQueue}>
                 <Play className="h-3 w-3 mr-1" />
                 Play
+              </Button>
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={handleShuffle} title="Shuffle queue">
+                <Shuffle className="h-3 w-3" />
               </Button>
               <Button variant="ghost" size="sm" className="text-xs h-7 text-muted-foreground hover:text-destructive" onClick={handleClear}>
                 <X className="h-3 w-3 mr-1" />

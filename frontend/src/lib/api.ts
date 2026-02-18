@@ -113,6 +113,10 @@ export const api = {
     }),
   disconnectBotById: (id: number) =>
     request(`/api/bot/${id}/disconnect`, { method: 'POST' }),
+  renameBotById: (botId: number, name: string) =>
+    request('/api/bot/name', { method: 'PUT', body: JSON.stringify({ name, botId }) }),
+  setDescriptionById: (botId: number, description: string) =>
+    request('/api/bot/description', { method: 'PUT', body: JSON.stringify({ description, botId }) }),
 
   // Player
   play: (url?: string, meta?: { title?: string; artist?: string; thumbnail?: string; duration?: number; source?: string }) =>
@@ -153,11 +157,12 @@ export const api = {
   moveInQueue: (fromIndex: number, toIndex: number) =>
     request('/api/queue/move', { method: 'PUT', body: JSON.stringify({ fromIndex, toIndex }) }),
   clearQueue: () => request('/api/queue', { method: 'DELETE' }),
+  shuffleQueue: () => request('/api/queue/shuffle', { method: 'POST' }),
 
   // Search
   searchYouTube: (q: string) =>
     request<{
-      tracks: { id: string; title: string; artist: string; duration: number; thumbnail: string; url: string; source: string }[];
+      tracks: { id: string; title: string; artist: string; duration: number; thumbnail: string; url: string; source: string; isLive?: boolean }[];
       error?: string;
     }>(`/api/search/youtube?q=${encodeURIComponent(q)}`),
   searchSpotify: (q: string) =>

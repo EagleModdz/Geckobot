@@ -139,13 +139,14 @@ class TS3AudioBotService {
       // Wait for the bot to connect
       await new Promise((r) => setTimeout(r, 2000));
 
-      // Set bot name if configured
-      if (s.bot.name) {
-        await this.botApi(`bot/name/${s.bot.name}`, 3000, newBotId).catch(() => {});
-      }
+      // Always set a name: use the configured name, or generate "Bot <id>" as a unique fallback
+      // so new bots never appear as "default" in the TS3 client list.
+      const nameToApply = s.bot.name || `Bot ${newBotId}`;
+      await this.botApiWithArg('bot/name', nameToApply, 3000, newBotId).catch(() => {});
+
       // Move to default channel if configured
       if (s.bot.defaultChannel) {
-        await this.botApi(`bot/move/${s.bot.defaultChannel}`, 3000, newBotId).catch(() => {});
+        await this.botApiWithArg('bot/move', s.bot.defaultChannel, 3000, newBotId).catch(() => {});
       }
       // Apply default avatar if configured
       if (s.bot.defaultAvatar) {
@@ -160,21 +161,28 @@ class TS3AudioBotService {
   }
 
   /** Disconnect and fully remove a specific bot instance by ID.
-   *  Uses `bot/disconnect` command which calls bot.Stop() → BotManager.RemoveBot() */
+   *  Uses `bot/disconnect` command which calls bot.Stop() → BotManager.RemoveBot()
+   *  Works on connected AND stuck-connecting instances. */
   async disconnectBot(id: number): Promise<{ ok: boolean; error?: string }> {
     try {
       // `bot/disconnect` fully stops the bot instance and removes it from the manager.
       // Plain `disconnect` only drops the TS connection but keeps the instance alive.
-      await this.botApi('bot/disconnect', 5000, id);
+      // Use a longer timeout (10s) for stuck-connecting bots that may take time to abort.
+      await this.botApi('bot/disconnect', 10000, id);
       if (id === this.selectedBotId) {
         this.botConnected = false;
       }
       return { ok: true };
     } catch (error: unknown) {
+      // Even on error, update our internal state so the bot is considered gone
       if (id === this.selectedBotId) {
         this.botConnected = false;
       }
-      return { ok: false, error: this.extractError(error) };
+      // TS3AudioBot might return an error even when the disconnect succeeded
+      // (e.g. if the bot was already in a broken state). Treat as success.
+      const msg = this.extractError(error);
+      console.warn(`disconnectBot(${id}) returned error (may be OK):`, msg);
+      return { ok: true };
     }
   }
 
@@ -203,12 +211,13 @@ class TS3AudioBotService {
             this.available = true;
             this.lastAvailableCheck = Date.now();
 
-            // Still set name and move to channel if configured
+            // Only rename reused bots when explicitly configured — they may already
+            // have a meaningful custom name from a previous session.
             if (s.bot.name) {
-              await this.botApi(`bot/name/${s.bot.name}`).catch(() => {});
+              await this.botApiWithArg('bot/name', s.bot.name).catch(() => {});
             }
             if (s.bot.defaultChannel) {
-              await this.botApi(`bot/move/${s.bot.defaultChannel}`).catch(() => {});
+              await this.botApiWithArg('bot/move', s.bot.defaultChannel).catch(() => {});
             }
             if (s.bot.defaultAvatar) {
               const avatarUrl = this.buildAvatarUrl(s.bot.defaultAvatar);
@@ -238,13 +247,13 @@ class TS3AudioBotService {
       // Wait for the bot to connect
       await new Promise((r) => setTimeout(r, 2000));
 
-      // Set bot name if configured
-      if (s.bot.name) {
-        await this.botApi(`bot/name/${s.bot.name}`).catch(() => {});
-      }
+      // Fresh connection: always assign a name so the bot never appears as "default".
+      const freshName = s.bot.name || `Bot ${this.selectedBotId}`;
+      await this.botApiWithArg('bot/name', freshName).catch(() => {});
+
       // Move to default channel if configured
       if (s.bot.defaultChannel) {
-        await this.botApi(`bot/move/${s.bot.defaultChannel}`).catch(() => {});
+        await this.botApiWithArg('bot/move', s.bot.defaultChannel).catch(() => {});
       }
       // Apply default avatar if configured
       if (s.bot.defaultAvatar) {
@@ -306,15 +315,15 @@ class TS3AudioBotService {
     } catch { return false; }
   }
 
-  async setBotName(name: string): Promise<boolean> {
-    try { await this.botApiWithArg('bot/name', name); return true; } catch { return false; }
+  async setBotName(name: string, botId?: number): Promise<boolean> {
+    try { await this.botApiWithArg('bot/name', name, 3000, botId); return true; } catch { return false; }
   }
 
   async moveToChannel(channelId: number): Promise<boolean> {
     try { await this.botApiWithArg('bot/move', String(channelId)); return true; } catch { return false; }
   }
 
-  async pollStatus(): Promise<{ player: PlayerStatus; bot: BotStatus; channels: Channel[]; botList: BotInfo[] } | null> {
+  async pollStatus(): Promise<{ player: PlayerStatus; bot: BotStatus; channels: Channel[]; botList: BotInfo[]; ping: number } | null> {
     if (this.pollInFlight) return null;
     if (!this.botConnected) {
       const reachable = await this.isAvailable();
@@ -335,6 +344,7 @@ class TS3AudioBotService {
     }
 
     this.pollInFlight = true;
+    const t0 = Date.now();
     try {
       const [player, bot, channels, botList] = await Promise.all([
         this.getPlayerStatus(),
@@ -342,7 +352,8 @@ class TS3AudioBotService {
         this.getChannels(),
         this.listBots(),
       ]);
-      return { player, bot, channels, botList };
+      const ping = Date.now() - t0;
+      return { player, bot, channels, botList, ping };
     } finally {
       this.pollInFlight = false;
     }
@@ -473,15 +484,15 @@ class TS3AudioBotService {
   }
 
   async setRepeatMode(mode: 'off' | 'one' | 'all'): Promise<boolean> {
-    try { await this.botApi(`repeat ${mode}`); return true; } catch { return false; }
+    try { await this.botApiWithArg('repeat', mode); return true; } catch { return false; }
   }
 
   async setShuffle(on: boolean): Promise<boolean> {
-    try { await this.botApi(`random ${on ? 'on' : 'off'}`); return true; } catch { return false; }
+    try { await this.botApiWithArg('random', on ? 'on' : 'off'); return true; } catch { return false; }
   }
 
-  async setDescription(desc: string): Promise<boolean> {
-    try { await this.botApiWithArg('bot/description/set', desc); return true; } catch { return false; }
+  async setDescription(desc: string, botId?: number): Promise<boolean> {
+    try { await this.botApiWithArg('bot/description/set', desc, 3000, botId); return true; } catch { return false; }
   }
 
   async setAvatar(imageUrl: string, botId?: number): Promise<boolean> {

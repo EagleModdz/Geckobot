@@ -12,6 +12,7 @@ export interface PlayerStatus {
     thumbnail: string;
     url: string;
     source: string;
+    isLive?: boolean;
   } | null;
   position: number;
   duration: number;
@@ -42,6 +43,7 @@ export interface QueueItem {
   url: string;
   source: string;
   addedBy: string;
+  isLive?: boolean;
 }
 
 const WS_URL = import.meta.env.VITE_WS_URL || '';
@@ -68,6 +70,7 @@ export function useSocket() {
   const [botList, setBotList] = useState<BotInfo[]>([]);
   const [selectedBotId, setSelectedBotId] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
+  const [ping, setPing] = useState<number>(-1);
 
   useEffect(() => {
     const socket = io(WS_URL, {
@@ -84,6 +87,7 @@ export function useSocket() {
     socket.on('bot:error', (err: string) => setError(err));
     socket.on('bot:list', (bots: BotInfo[]) => setBotList(bots));
     socket.on('bot:selected', (id: number) => setSelectedBotId(id));
+    socket.on('bot:ping', (ms: number) => setPing(ms));
 
     return () => {
       socket.disconnect();
@@ -92,5 +96,5 @@ export function useSocket() {
 
   const clearError = useCallback(() => setError(null), []);
 
-  return { connected, playerStatus, botStatus, queue, channels, botList, selectedBotId, error, clearError };
+  return { connected, playerStatus, botStatus, queue, channels, botList, selectedBotId, error, ping, clearError };
 }

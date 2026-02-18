@@ -110,12 +110,12 @@ router.get('/status', async (_req: Request, res: Response) => {
 });
 
 router.put('/name', async (req: Request, res: Response) => {
-  const { name } = req.body;
+  const { name, botId } = req.body;
   if (!name) {
     res.status(400).json({ error: 'Name is required' });
     return;
   }
-  const success = await ts3audiobot.setBotName(name);
+  const success = await ts3audiobot.setBotName(name, typeof botId === 'number' ? botId : undefined);
   if (success) {
     res.json({ message: 'Bot name updated' });
   } else {
@@ -143,12 +143,12 @@ router.get('/channels', async (_req: Request, res: Response) => {
 });
 
 router.put('/description', async (req: Request, res: Response) => {
-  const { description } = req.body;
+  const { description, botId } = req.body;
   if (description === undefined) {
     res.status(400).json({ error: 'description is required' });
     return;
   }
-  const success = await ts3audiobot.setDescription(description);
+  const success = await ts3audiobot.setDescription(description, typeof botId === 'number' ? botId : undefined);
   if (success) {
     res.json({ message: 'Description updated' });
   } else {

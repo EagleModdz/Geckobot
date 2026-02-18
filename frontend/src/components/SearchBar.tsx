@@ -1,5 +1,5 @@
 import { useState, forwardRef, useImperativeHandle } from 'react';
-import { Search, Play, ListPlus, Loader2, Youtube, AlertCircle } from 'lucide-react';
+import { Search, Play, ListPlus, Loader2, Youtube, AlertCircle, Radio } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { api } from '@/lib/api';
@@ -14,6 +14,7 @@ interface Track {
   thumbnail: string;
   url: string;
   source: string;
+  isLive?: boolean;
 }
 
 export interface SearchBarHandle {
@@ -114,9 +115,17 @@ export function SearchResults({ results, error, loading, busyId, onPlay, onQueue
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm truncate">{track.title}</p>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <p className="text-sm truncate">{track.title}</p>
+              {track.isLive && (
+                <span className="flex items-center gap-0.5 text-[9px] font-bold bg-red-600 text-white px-1 py-px rounded flex-shrink-0">
+                  <Radio className="h-2.5 w-2.5" />
+                  LIVE
+                </span>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground truncate">
-              {track.artist} &middot; {formatDuration(track.duration)}
+              {track.artist} &middot; {track.isLive ? '∞' : formatDuration(track.duration)}
             </p>
           </div>
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
