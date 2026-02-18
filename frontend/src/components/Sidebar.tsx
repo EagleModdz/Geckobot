@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Home, Settings, Bot, FolderTree, Users, Palette, LogOut, Pin, PinOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { GeckoLogo } from './GeckoLogo';
-import { useTheme, themes, type ThemeId } from '@/hooks/useTheme';
+import { ThemePicker } from './ThemePicker';
 
 interface SidebarProps {
   botConnected: boolean;
@@ -27,7 +27,9 @@ function PingDot({ ping }: { ping: number }) {
 
 export function Sidebar({ botConnected, botName, clientsInChannel, onOpenChannelBrowser, onOpenBotManager, currentPage = 'dashboard', ping = -1 }: SidebarProps) {
   const navigate = useNavigate();
-  const { theme, setTheme } = useTheme();
+  /* const { theme, setTheme } = useTheme(); */
+  // theme and setTheme are now handled by ThemePicker
+
   const [pinned, setPinned] = useState(() => localStorage.getItem('sidebarPinned') === 'true');
   const [hovered, setHovered] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
@@ -50,7 +52,7 @@ export function Sidebar({ botConnected, botName, clientsInChannel, onOpenChannel
     <aside
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => { setHovered(false); setThemeOpen(false); }}
-      className="h-full flex-shrink-0 border-r border-border/50 bg-card/50 flex flex-col overflow-hidden z-30 transition-all duration-200 ease-in-out"
+      className="h-full flex-shrink-0 border-r border-border/50 bg-card/50 flex flex-col overflow-visible z-30 transition-all duration-200 ease-in-out"
       style={{ width: expanded ? 224 : 64 }}
     >
       {/* Logo + Pin */}
@@ -139,29 +141,13 @@ export function Sidebar({ botConnected, botName, clientsInChannel, onOpenChannel
       {/* Theme switcher */}
       <div className="px-3 mb-1 flex-shrink-0">
         <button
-          onClick={() => setThemeOpen((v) => !v)}
+          onClick={() => setThemeOpen(true)}
           className="flex items-center gap-2.5 w-full px-2 py-1.5 rounded-md hover:bg-accent/50 transition-colors"
         >
           <Palette className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           {expanded && <span className="text-sm text-muted-foreground">Theme</span>}
         </button>
-        {expanded && themeOpen && (
-          <div className="mt-1 px-1 pb-1">
-            <div className="grid grid-cols-4 gap-1.5 p-2 rounded-md bg-secondary/30">
-              {themes.map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setTheme(t.id as ThemeId)}
-                  className={`w-full aspect-square rounded-md border-2 transition-all ${
-                    theme === t.id ? 'border-foreground scale-110' : 'border-transparent hover:border-muted-foreground/30'
-                  }`}
-                  style={{ backgroundColor: t.color }}
-                  title={t.name}
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        <ThemePicker open={themeOpen} onOpenChange={setThemeOpen} />
       </div>
 
       {/* User + logout */}
@@ -206,11 +192,10 @@ function NavItem({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2.5 w-full px-2 py-2 rounded-md transition-colors ${
-        active
-          ? 'bg-primary/10 text-primary'
-          : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-      }`}
+      className={`flex items-center gap-2.5 w-full px-2 py-2 rounded-md transition-colors ${active
+        ? 'bg-primary/10 text-primary'
+        : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+        }`}
       title={expanded ? undefined : label}
     >
       <Icon className="h-[18px] w-[18px] flex-shrink-0" />

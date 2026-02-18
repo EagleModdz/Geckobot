@@ -24,6 +24,49 @@
     --radius: 0.5rem;
   }
 
+  /* Light Mode */
+  .dark[data-theme="light"],
+  [data-theme="light"] {
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+  }
+
+  /* Full Dark Mode */
+  .dark[data-theme="dark"] {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3%;
+    --card-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+  }
+
   /* Gecko Green (default dark theme) */
   .dark,
   .dark[data-theme="gecko"] {
@@ -192,12 +235,135 @@
     --input: 160 10% 17%;
     --ring: 160 60% 52%;
   }
+
+  /* Midnight (Deep Blue/Slate) */
+  .dark[data-theme="midnight"] {
+    --background: 222 47% 4%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 6%;
+    --card-foreground: 210 40% 98%;
+    --primary: 210 100% 50%;
+    --primary-foreground: 222 47% 4%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 224 76% 48%;
+  }
+
+  /* Dark Forest */
+  .dark[data-theme="forest"] {
+    --background: 145 35% 5%;
+    --foreground: 145 20% 96%;
+    --card: 145 35% 8%;
+    --card-foreground: 145 20% 96%;
+    --primary: 142 76% 36%;
+    --primary-foreground: 145 20% 96%;
+    --secondary: 145 20% 16%;
+    --secondary-foreground: 145 20% 96%;
+    --muted: 145 20% 16%;
+    --muted-foreground: 145 15% 60%;
+    --accent: 145 20% 16%;
+    --accent-foreground: 145 20% 96%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 145 20% 17%;
+    --input: 145 20% 17%;
+    --ring: 142 76% 36%;
+  }
+
+  /* Luxury Gold */
+  .dark[data-theme="gold"] {
+    --background: 45 20% 5%;
+    --foreground: 45 20% 96%;
+    --card: 45 20% 8%;
+    --card-foreground: 45 20% 96%;
+    --primary: 45 93% 47%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 45 15% 16%;
+    --secondary-foreground: 45 20% 96%;
+    --muted: 45 15% 16%;
+    --muted-foreground: 45 10% 60%;
+    --accent: 45 15% 16%;
+    --accent-foreground: 45 20% 96%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 45 15% 17%;
+    --input: 45 15% 17%;
+    --ring: 45 93% 47%;
+  }
+
+
+
+  /* Dracula */
+  .dark[data-theme="dracula"] {
+    --background: 231 15% 18%;
+    /* #282a36 */
+    --foreground: 60 30% 96%;
+    /* #f8f8f2 */
+    --card: 231 15% 22%;
+    /* #44475a (Current Line) is a bit light, let's use slightly darker for card */
+    --card-foreground: 60 30% 96%;
+    --primary: 265 89% 78%;
+    /* #bd93f9 (Purple) */
+    --primary-foreground: 231 15% 18%;
+    --secondary: 326 100% 74%;
+    /* #ff79c6 (Pink) as secondary */
+    --secondary-foreground: 231 15% 18%;
+    --muted: 231 15% 25%;
+    --muted-foreground: 231 10% 63%;
+    /* #6272a4 (Comment) */
+    --accent: 231 15% 25%;
+    --accent-foreground: 60 30% 96%;
+    --destructive: 0 100% 67%;
+    /* #ff5555 (Red) */
+    --destructive-foreground: 231 15% 18%;
+    --border: 231 15% 28%;
+    /* #6272a4 */
+    --input: 231 15% 28%;
+    --ring: 265 89% 78%;
+  }
+
+  /* Nord */
+  .dark[data-theme="nord"] {
+    --background: 220 16% 22%;
+    /* #2e3440 */
+    --foreground: 218 27% 92%;
+    /* #eceff4 */
+    --card: 220 16% 26%;
+    /* #3b4252 */
+    --card-foreground: 218 27% 92%;
+    --primary: 193 43% 67%;
+    /* #88c0d0 (Frost Cyan) */
+    --primary-foreground: 220 16% 22%;
+    --secondary: 213 32% 52%;
+    /* #5e81ac (Frost Blue) */
+    --secondary-foreground: 218 27% 92%;
+    --muted: 220 17% 32%;
+    /* #434c5e */
+    --muted-foreground: 218 27% 92%;
+    --accent: 220 17% 32%;
+    --accent-foreground: 218 27% 92%;
+    --destructive: 354 42% 56%;
+    /* #bf616a */
+    --destructive-foreground: 218 27% 92%;
+    --border: 220 17% 32%;
+    --input: 220 17% 32%;
+    --ring: 193 43% 67%;
+  }
 }
 
 @layer base {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-family: system-ui, -apple-system, sans-serif;
@@ -206,26 +372,54 @@
 
 /* Toast animations */
 @keyframes slideInFromBottom {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
+
 @keyframes slideInFromTop {
-  from { transform: translateY(-100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
+
 @keyframes fadeOut {
-  from { opacity: 1; }
-  to { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
+
 @keyframes slideOutToRight {
-  from { transform: translateX(0); }
-  to { transform: translateX(100%); }
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
 }
 
 [data-state='open'] .animate-in,
 .animate-in[data-state='open'] {
   animation: slideInFromTop 200ms ease-out;
 }
+
 [data-state='closed'] .animate-out,
 .animate-out[data-state='closed'] {
   animation: fadeOut 150ms ease-in, slideOutToRight 150ms ease-in;
@@ -242,29 +436,45 @@
 ::-webkit-scrollbar {
   width: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: hsl(var(--muted-foreground) / 0.3);
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
 }
 
 /* Queue slide animation */
 @keyframes slideInFromRight {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
 }
+
 @keyframes slideOutToRightPanel {
-  from { transform: translateX(0); }
-  to { transform: translateX(100%); }
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
 }
+
 .queue-enter {
   animation: slideInFromRight 250ms ease-out forwards;
 }
+
 .queue-exit {
   animation: slideOutToRightPanel 200ms ease-in forwards;
 }
