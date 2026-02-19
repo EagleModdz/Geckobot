@@ -2,6 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { settingsService } from './settings';
 import { config } from '../config';
 import { PlayerStatus, BotStatus, Channel, ChannelClient } from '../types';
+import { getYouTubeInfo } from './youtube';
 
 export interface BotInfo {
   id: number;
@@ -26,6 +27,9 @@ class TS3AudioBotService {
   private pollInFlight = false;
   /** Track metadata stored when playing directly (not from queue) */
   private directPlayMeta: { url: string; title: string; artist: string; thumbnail: string; duration: number; source: string } | null = null;
+  /** Auto-fetched metadata for songs started outside the backend (e.g. !play from TS3 chat) */
+  private fetchedMeta: { link: string; track: { title: string; artist: string; thumbnail: string; duration: number; source: string } | null } | null = null;
+  private isFetchingMeta = false;
 
   getSelectedBotId(): number {
     return this.selectedBotId;
@@ -405,17 +409,31 @@ class TS3AudioBotService {
           ? queueTrack
           : meta;
 
+      // If still no thumbnail and a link is available, auto-fetch via yt-dlp
+      // (covers songs started via !play in TS3 chat where backend has no stored meta)
+      if (!enrichment?.thumbnail && link && isPlaying) {
+        if (this.fetchedMeta?.link !== link && !this.isFetchingMeta) {
+          this.isFetchingMeta = true;
+          getYouTubeInfo(link)
+            .then((track) => { this.fetchedMeta = { link, track }; })
+            .catch(() => { this.fetchedMeta = { link, track: null }; })
+            .finally(() => { this.isFetchingMeta = false; });
+        }
+      }
+      const fetched = this.fetchedMeta?.link === link ? this.fetchedMeta.track : null;
+      const final = enrichment?.thumbnail ? enrichment : fetched ?? null;
+
       return {
         isPlaying,
         currentTrack: title
           ? {
               id: link || title,
-              title: enrichment?.title || title,
-              artist: enrichment?.artist || '',
-              duration: songData?.Length || enrichment?.duration || 0,
-              thumbnail: enrichment?.thumbnail || '',
+              title: final?.title || title,
+              artist: final?.artist || '',
+              duration: songData?.Length || final?.duration || 0,
+              thumbnail: final?.thumbnail || '',
               url: link,
-              source: enrichment?.source || songData?.AudioType || 'youtube',
+              source: final?.source || songData?.AudioType || 'youtube',
             }
           : null,
         position: songData?.Position || 0,

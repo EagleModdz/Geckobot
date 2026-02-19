@@ -160,16 +160,34 @@ export function SearchResults({ results, error, loading, busyId, onPlay, onQueue
   );
 }
 
+// Module-level cache — survives Dashboard unmount/remount when navigating away
+const _cache = {
+  query: '',
+  allTracks: [] as Track[],
+  results: [] as Track[],
+  page: 1,
+  activeTab: 'youtube' as 'youtube' | 'spotify',
+  error: null as string | null,
+};
+
 export const SearchBar = forwardRef<SearchBarHandle>(function SearchBar(_props, ref) {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<Track[]>([]);
-  const [allTracks, setAllTracks] = useState<Track[]>([]); // Buffered full list
+  const [query, setQuery] = useState(_cache.query);
+  const [results, setResults] = useState<Track[]>(_cache.results);
+  const [allTracks, setAllTracks] = useState<Track[]>(_cache.allTracks);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'youtube' | 'spotify'>('youtube');
+  const [activeTab, setActiveTab] = useState<'youtube' | 'spotify'>(_cache.activeTab);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
+  const [error, setError] = useState<string | null>(_cache.error);
+  const [page, setPage] = useState(_cache.page);
   const [hasMore, setHasMore] = useState(false);
+
+  // Keep cache in sync so state survives navigation
+  const setQueryC = (v: string) => { _cache.query = v; setQuery(v); };
+  const setResultsC = (v: Track[]) => { _cache.results = v; setResults(v); };
+  const setAllTracksC = (v: Track[]) => { _cache.allTracks = v; setAllTracks(v); };
+  const setPageC = (v: number) => { _cache.page = v; setPage(v); };
+  const setErrorC = (v: string | null) => { _cache.error = v; setError(v); };
+  const setActiveTabC = (v: 'youtube' | 'spotify') => { _cache.activeTab = v; setActiveTab(v); };
 
   const [limit, setLimit] = useState(10);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -199,7 +217,7 @@ export const SearchBar = forwardRef<SearchBarHandle>(function SearchBar(_props, 
     if (activeTab === 'youtube') {
       const start = (page - 1) * limit;
       const end = start + limit;
-      setResults(allTracks.slice(start, end));
+      setResultsC(allTracks.slice(start, end));
       setHasMore(allTracks.length > end || (allTracks.length > 0 && allTracks.length % 50 === 0));
     }
   }, [page, limit, allTracks, activeTab]);
@@ -210,13 +228,12 @@ export const SearchBar = forwardRef<SearchBarHandle>(function SearchBar(_props, 
     // Reset if new search
     let currentBuffer = isNewSearch ? [] : [...allTracks];
     if (isNewSearch) {
-      setAllTracks([]);
-      setPage(1);
-      setResults([]);
+      setAllTracksC([]);
+      setPageC(1);
+      setResultsC([]);
       // currentBuffer is []
     }
 
-    const startNeeded = (targetPage - 1) * limit;
     const endNeeded = targetPage * limit;
     const BATCH_SIZE = 25;
 
@@ -224,34 +241,34 @@ export const SearchBar = forwardRef<SearchBarHandle>(function SearchBar(_props, 
       // If we don't have enough data in buffer, fetch more
       if (currentBuffer.length < endNeeded) {
         setLoading(true);
-        setError(null);
+        setErrorC(null);
         try {
           const nextBatchPage = Math.floor(currentBuffer.length / BATCH_SIZE) + 1;
           const data = await api.searchYouTube(query, nextBatchPage, BATCH_SIZE);
 
-          if (data.error) setError(data.error);
+          if (data.error) setErrorC(data.error);
 
           if (data.tracks && data.tracks.length > 0) {
             currentBuffer = [...currentBuffer, ...data.tracks];
-            setAllTracks(currentBuffer);
+            setAllTracksC(currentBuffer);
           }
         } catch (err) {
-          setError(err instanceof Error ? err.message : 'Search failed');
+          setErrorC(err instanceof Error ? err.message : 'Search failed');
         } finally {
           setLoading(false);
         }
       }
-      setPage(targetPage);
+      setPageC(targetPage);
     } else {
       setLoading(true);
-      setError(null);
+      setErrorC(null);
       try {
         const data = await api.searchSpotify(query);
-        setResults(data.tracks);
-        setAllTracks(data.tracks);
+        setResultsC(data.tracks);
+        setAllTracksC(data.tracks);
       } catch (err) {
-        setResults([]);
-        setError(err instanceof Error ? err.message : 'Search failed');
+        setResultsC([]);
+        setErrorC(err instanceof Error ? err.message : 'Search failed');
       } finally {
         setLoading(false);
       }
@@ -298,9 +315,9 @@ export const SearchBar = forwardRef<SearchBarHandle>(function SearchBar(_props, 
       <div className="p-3 border-b border-border/30 flex-shrink-0">
         <SearchInput
           query={query}
-          setQuery={setQuery}
+          setQuery={setQueryC}
           activeTab={activeTab}
-          setActiveTab={(t) => { setActiveTab(t); setError(null); setResults([]); setPage(1); }}
+          setActiveTab={(t) => { setActiveTabC(t); setErrorC(null); setResultsC([]); setPageC(1); }}
           onSearch={onSearchClick}
           loading={loading}
         />
