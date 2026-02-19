@@ -17,9 +17,13 @@ function getExtraArgs(): string[] {
 
 export async function searchYouTube(
   query: string,
-  limit = 10,
+  page = 1,
+  limit = 20,
 ): Promise<{ tracks: Track[]; error?: string }> {
   const ytdlp = getYtDlpPath();
+  const start = (page - 1) * limit + 1;
+  const end = start + limit - 1;
+  const totalToFetch = page * limit;
 
   try {
     const { stdout } = await execFileAsync(
@@ -28,8 +32,12 @@ export async function searchYouTube(
         '--flat-playlist',
         '--dump-json',
         '--no-warnings',
+        '--playlist-start',
+        String(start),
+        '--playlist-end',
+        String(end),
         '--default-search',
-        'ytsearch' + limit,
+        `ytsearch${totalToFetch}`,
         ...getExtraArgs(),
         query,
       ],

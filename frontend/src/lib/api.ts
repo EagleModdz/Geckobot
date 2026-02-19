@@ -160,11 +160,13 @@ export const api = {
   shuffleQueue: () => request('/api/queue/shuffle', { method: 'POST' }),
 
   // Search
-  searchYouTube: (q: string) =>
+  searchYouTube: (q: string, page = 1, limit = 20) =>
     request<{
       tracks: { id: string; title: string; artist: string; duration: number; thumbnail: string; url: string; source: string; isLive?: boolean }[];
       error?: string;
-    }>(`/api/search/youtube?q=${encodeURIComponent(q)}`),
+      page: number;
+      limit: number;
+    }>(`/api/search/youtube?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}`),
   searchSpotify: (q: string) =>
     request<{
       tracks: { id: string; title: string; artist: string; duration: number; thumbnail: string; url: string; source: string; spotifyUri?: string }[];

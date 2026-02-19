@@ -15,14 +15,18 @@ export function Dashboard() {
       <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Center Content: NowPlaying + Search */}
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <div className="flex-1 overflow-y-auto">
-            <NowPlaying
-              track={playerStatus.currentTrack}
-              isPlaying={playerStatus.isPlaying}
-              channelName={botStatus.channelName}
-              botName={botStatus.botName}
-            />
-            <SearchBar />
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <div className="flex-shrink-0">
+              <NowPlaying
+                track={playerStatus.currentTrack}
+                isPlaying={playerStatus.isPlaying}
+                channelName={botStatus.channelName}
+                botName={botStatus.botName}
+              />
+            </div>
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <SearchBar />
+            </div>
           </div>
         </main>
 

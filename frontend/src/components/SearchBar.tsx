@@ -1,4 +1,4 @@
-import { useState, forwardRef, useImperativeHandle } from 'react';
+import { useState, forwardRef, useImperativeHandle, useRef, useEffect } from 'react';
 import { Search, Play, ListPlus, Loader2, Youtube, AlertCircle, Radio } from 'lucide-react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
@@ -36,21 +36,19 @@ export function SearchInput({ query, setQuery, activeTab, setActiveTab, onSearch
       <div className="flex bg-secondary/50 rounded-md p-0.5">
         <button
           onClick={() => setActiveTab('youtube')}
-          className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
-            activeTab === 'youtube'
-              ? 'bg-red-500/20 text-red-400'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
+          className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${activeTab === 'youtube'
+            ? 'bg-red-500/20 text-red-400'
+            : 'text-muted-foreground hover:text-foreground'
+            }`}
         >
           YouTube
         </button>
         <button
           onClick={() => setActiveTab('spotify')}
-          className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
-            activeTab === 'spotify'
-              ? 'bg-green-500/20 text-green-400'
-              : 'text-muted-foreground hover:text-foreground'
-          }`}
+          className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${activeTab === 'spotify'
+            ? 'bg-green-500/20 text-green-400'
+            : 'text-muted-foreground hover:text-foreground'
+            }`}
         >
           Spotify
         </button>
@@ -99,7 +97,7 @@ export function SearchResults({ results, error, loading, busyId, onPlay, onQueue
   }
 
   return (
-    <div className="divide-y divide-border/30">
+    <div className="divide-y divide-border/30 pb-4">
       {results.map((track) => (
         <div
           key={track.id}
@@ -156,6 +154,8 @@ export function SearchResults({ results, error, loading, busyId, onPlay, onQueue
           </div>
         </div>
       ))}
+
+
     </div>
   );
 }
@@ -163,32 +163,103 @@ export function SearchResults({ results, error, loading, busyId, onPlay, onQueue
 export const SearchBar = forwardRef<SearchBarHandle>(function SearchBar(_props, ref) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Track[]>([]);
+  const [allTracks, setAllTracks] = useState<Track[]>([]); // Buffered full list
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'youtube' | 'spotify'>('youtube');
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+
+  const [limit, setLimit] = useState(10);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useImperativeHandle(ref, () => ({
     get hasResults() { return results.length > 0; }
   }));
 
-  const handleSearch = async () => {
-    if (!query.trim()) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data =
-        activeTab === 'youtube'
-          ? await api.searchYouTube(query)
-          : await api.searchSpotify(query);
-      setResults(data.tracks);
-      if (data.error) setError(data.error);
-    } catch (err) {
-      setResults([]);
-      setError(err instanceof Error ? err.message : 'Search failed');
-    } finally {
-      setLoading(false);
+  // Calculate limit based on available height
+  useEffect(() => {
+    const updateLimit = () => {
+      if (containerRef.current) {
+        const height = containerRef.current.clientHeight;
+        const itemHeight = 62; // Approximate height of a search result item
+        const newLimit = Math.max(3, Math.floor(height / itemHeight));
+        setLimit(newLimit);
+      }
+    };
+
+    updateLimit(); // Initial calculation
+    window.addEventListener('resize', updateLimit);
+    return () => window.removeEventListener('resize', updateLimit);
+  }, []);
+
+  // Update displayed results when page, limit, or buffer changes
+  useEffect(() => {
+    if (activeTab === 'youtube') {
+      const start = (page - 1) * limit;
+      const end = start + limit;
+      setResults(allTracks.slice(start, end));
+      setHasMore(allTracks.length > end || (allTracks.length > 0 && allTracks.length % 50 === 0));
     }
+  }, [page, limit, allTracks, activeTab]);
+
+  const handleSearch = async (targetPage = 1, isNewSearch = false) => {
+    if (!query.trim()) return;
+
+    // Reset if new search
+    let currentBuffer = isNewSearch ? [] : [...allTracks];
+    if (isNewSearch) {
+      setAllTracks([]);
+      setPage(1);
+      setResults([]);
+      // currentBuffer is []
+    }
+
+    const startNeeded = (targetPage - 1) * limit;
+    const endNeeded = targetPage * limit;
+    const BATCH_SIZE = 25;
+
+    if (activeTab === 'youtube') {
+      // If we don't have enough data in buffer, fetch more
+      if (currentBuffer.length < endNeeded) {
+        setLoading(true);
+        setError(null);
+        try {
+          const nextBatchPage = Math.floor(currentBuffer.length / BATCH_SIZE) + 1;
+          const data = await api.searchYouTube(query, nextBatchPage, BATCH_SIZE);
+
+          if (data.error) setError(data.error);
+
+          if (data.tracks && data.tracks.length > 0) {
+            currentBuffer = [...currentBuffer, ...data.tracks];
+            setAllTracks(currentBuffer);
+          }
+        } catch (err) {
+          setError(err instanceof Error ? err.message : 'Search failed');
+        } finally {
+          setLoading(false);
+        }
+      }
+      setPage(targetPage);
+    } else {
+      setLoading(true);
+      setError(null);
+      try {
+        const data = await api.searchSpotify(query);
+        setResults(data.tracks);
+        setAllTracks(data.tracks);
+      } catch (err) {
+        setResults([]);
+        setError(err instanceof Error ? err.message : 'Search failed');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const onSearchClick = () => {
+    handleSearch(1, true);
   };
 
   const handlePlay = async (track: Track) => {
@@ -222,20 +293,20 @@ export const SearchBar = forwardRef<SearchBarHandle>(function SearchBar(_props, 
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {/* Top bar search input */}
-      <div className="p-3 border-b border-border/30">
+      <div className="p-3 border-b border-border/30 flex-shrink-0">
         <SearchInput
           query={query}
           setQuery={setQuery}
           activeTab={activeTab}
-          setActiveTab={(t) => { setActiveTab(t); setError(null); }}
-          onSearch={handleSearch}
+          setActiveTab={(t) => { setActiveTab(t); setError(null); setResults([]); setPage(1); }}
+          onSearch={onSearchClick}
           loading={loading}
         />
       </div>
       {/* Results */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={containerRef} className="flex-1 overflow-hidden min-h-0">
         <SearchResults
           results={results}
           error={error}
@@ -245,6 +316,29 @@ export const SearchBar = forwardRef<SearchBarHandle>(function SearchBar(_props, 
           onQueue={handleQueue}
         />
       </div>
+
+      {/* Pagination Footer */}
+      {activeTab === 'youtube' && results.length > 0 && (
+        <div className="p-2 border-t border-border/30 bg-card/50 flex items-center justify-center gap-2 flex-shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleSearch(page - 1, false)}
+            disabled={page <= 1 || loading}
+          >
+            Previous
+          </Button>
+          <span className="text-xs text-muted-foreground w-16 text-center">Page {page}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleSearch(page + 1, false)}
+            disabled={!hasMore || loading}
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </div>
   );
 });

@@ -8,17 +8,20 @@ router.use(authMiddleware);
 
 router.get('/youtube', async (req: Request, res: Response) => {
   const query = req.query.q as string;
+  const page = parseInt((req.query.page as string) || '1', 10);
+  const limit = parseInt((req.query.limit as string) || '20', 10);
+
   if (!query) {
     res.status(400).json({ error: 'Query parameter q is required' });
     return;
   }
 
-  const result = await searchYouTube(query);
+  const result = await searchYouTube(query, page, limit);
   if (result.error && result.tracks.length === 0) {
     res.status(500).json({ tracks: [], error: result.error, source: 'youtube', query });
     return;
   }
-  res.json({ tracks: result.tracks, error: result.error, source: 'youtube', query });
+  res.json({ tracks: result.tracks, error: result.error, source: 'youtube', query, page, limit });
 });
 
 router.get('/youtube/info', async (req: Request, res: Response) => {
