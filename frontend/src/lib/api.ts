@@ -1,5 +1,29 @@
 const API_URL = import.meta.env.VITE_API_URL || '';
 
+export interface PermissionMember {
+  type: 'uid' | 'groupid';
+  value: string;
+  displayName?: string;
+}
+
+export interface PermissionGroup {
+  id: string;
+  name: string;
+  color: string;
+  members: PermissionMember[];
+  grants: string[]; // TS3AudioBot command paths
+}
+
+export interface Command {
+  id: string;
+  command: string;     // TS3AudioBot API path, e.g. "play", "volume", "bot name"
+  label: string;
+  description: string;
+  category: string;    // "Playback", "Bot", "Queue", "Voice", "Info", "Admin"
+  enabled: boolean;
+  botStates: Record<string, boolean>;
+}
+
 export interface Channel {
   id: number;
   name: string;
@@ -181,10 +205,46 @@ export const api = {
     uploadFile('/api/bot/avatar/default', file),
   removeDefaultAvatar: () => request<{ message: string }>('/api/bot/avatar/default', { method: 'DELETE' }),
 
+  // Permissions
+  getPermissionGroups: () =>
+    request<{ groups: PermissionGroup[] }>('/api/permissions/groups'),
+  getPermissionPreview: () =>
+    request<{ toml: string; rightsFile: string | null }>('/api/permissions/preview'),
+  getTs3Clients: () =>
+    request<{ clients: { id: number; name: string; uid: string }[] }>('/api/permissions/ts3-clients'),
+  createPermissionGroup: (name: string, color: string) =>
+    request<{ group: PermissionGroup; apply: { ok: boolean; error?: string } }>('/api/permissions/groups', { method: 'POST', body: JSON.stringify({ name, color }) }),
+  updatePermissionGroup: (id: string, name: string, color: string) =>
+    request<{ group: PermissionGroup; apply: { ok: boolean; error?: string } }>(`/api/permissions/groups/${id}`, { method: 'PUT', body: JSON.stringify({ name, color }) }),
+  deletePermissionGroup: (id: string) =>
+    request<{ message: string; apply: { ok: boolean; error?: string } }>(`/api/permissions/groups/${id}`, { method: 'DELETE' }),
+  addPermissionMember: (groupId: string, type: 'uid' | 'groupid', value: string, displayName?: string) =>
+    request<{ group: PermissionGroup; apply: { ok: boolean; error?: string } }>(`/api/permissions/groups/${groupId}/members`, { method: 'POST', body: JSON.stringify({ type, value, displayName }) }),
+  removePermissionMember: (groupId: string, type: string, value: string) =>
+    request<{ group: PermissionGroup; apply: { ok: boolean; error?: string } }>(`/api/permissions/groups/${groupId}/members`, { method: 'DELETE', body: JSON.stringify({ type, value }) }),
+  grantPermissionCommand: (groupId: string, command: string) =>
+    request<{ group: PermissionGroup; apply: { ok: boolean; error?: string } }>(`/api/permissions/groups/${groupId}/commands`, { method: 'POST', body: JSON.stringify({ command }) }),
+  grantAllPermissionCommands: (groupId: string) =>
+    request<{ group: PermissionGroup; apply: { ok: boolean; error?: string } }>(`/api/permissions/groups/${groupId}/commands/grant-all`, { method: 'POST' }),
+  revokePermissionCommand: (groupId: string, command: string) =>
+    request<{ group: PermissionGroup; apply: { ok: boolean; error?: string } }>(`/api/permissions/groups/${groupId}/commands/${encodeURIComponent(command)}`, { method: 'DELETE' }),
+
+  // Commands
+  getCommands: () =>
+    request<{ commands: Command[] }>('/api/commands'),
+  updateCommandMeta: (id: string, label: string, description: string) =>
+    request<{ command: Command }>(`/api/commands/${id}`, { method: 'PUT', body: JSON.stringify({ label, description }) }),
+  toggleCommand: (id: string) =>
+    request<{ command: Command }>(`/api/commands/${id}/toggle`, { method: 'PATCH' }),
+  toggleBotCommand: (id: string, botId: number) =>
+    request<{ command: Command }>(`/api/commands/${id}/bots/${botId}/toggle`, { method: 'PATCH' }),
+  clearBotCommandOverride: (id: string, botId: number) =>
+    request<{ command: Command }>(`/api/commands/${id}/bots/${botId}/override`, { method: 'DELETE' }),
+
   // Settings
   getSettings: () => request<{
     ts3server: { host: string; port: number; queryPort: number; queryUser: string; queryPassword: string; serverPassword: string };
-    ts3audiobot: { url: string; apiKey: string };
+    ts3audiobot: { url: string; apiKey: string; rightsFile: string };
     bot: { name: string; defaultChannel: string; identity: string; defaultAvatar: string };
     spotify: { clientId: string; clientSecret: string; redirectUri: string };
     ytdlp: { path: string; cookiesFile: string };

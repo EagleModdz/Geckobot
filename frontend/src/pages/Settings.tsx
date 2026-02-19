@@ -30,6 +30,7 @@ interface SettingsData {
   ts3audiobot: {
     url: string;
     apiKey: string;
+    rightsFile: string;
   };
   bot: {
     name: string;
@@ -296,6 +297,14 @@ export function Settings() {
                   value={settings.ts3audiobot.apiKey}
                   onChange={(e) => update('ts3audiobot', 'apiKey', e.target.value)}
                   placeholder="Optional"
+                />
+              </Field>
+              <Field label="Rights File Path" description="Absolute path to rights.toml — managed automatically by the Permissions tab">
+                <Input
+                  value={settings.ts3audiobot.rightsFile}
+                  onChange={(e) => update('ts3audiobot', 'rightsFile', e.target.value)}
+                  placeholder="/path/to/ts3audiobot/bin/rights.toml"
+                  className="font-mono text-sm"
                 />
               </Field>
               <div className="flex items-center gap-3 pt-1">

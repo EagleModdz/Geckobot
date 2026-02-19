@@ -28,7 +28,61 @@ db.exec(`
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );
+
+  CREATE TABLE IF NOT EXISTS permission_groups (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    color TEXT NOT NULL DEFAULT '#6366f1',
+    created_at INTEGER NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS permission_members (
+    group_id TEXT NOT NULL,
+    type TEXT NOT NULL,
+    value TEXT NOT NULL,
+    display_name TEXT,
+    PRIMARY KEY (group_id, type, value)
+  );
+
+  CREATE TABLE IF NOT EXISTS permission_grants (
+    group_id TEXT NOT NULL,
+    command TEXT NOT NULL,
+    PRIMARY KEY (group_id, command)
+  );
+
+  CREATE TABLE IF NOT EXISTS commands (
+    id TEXT PRIMARY KEY,
+    command TEXT NOT NULL,
+    label TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    category TEXT NOT NULL DEFAULT 'General',
+    enabled INTEGER NOT NULL DEFAULT 1,
+    bot_states TEXT NOT NULL DEFAULT '{}',
+    created_at INTEGER NOT NULL
+  );
 `);
+
+// Migration: if the commands table has the old schema (trigger column), drop and recreate it
+try {
+  const cols = db.pragma('table_info(commands)') as { name: string }[];
+  const hasOldSchema = cols.some((c) => c.name === 'trigger');
+  if (hasOldSchema) {
+    db.exec('DROP TABLE commands');
+    db.exec(`
+      CREATE TABLE commands (
+        id TEXT PRIMARY KEY,
+        command TEXT NOT NULL,
+        label TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        category TEXT NOT NULL DEFAULT 'General',
+        enabled INTEGER NOT NULL DEFAULT 1,
+        bot_states TEXT NOT NULL DEFAULT '{}',
+        created_at INTEGER NOT NULL
+      );
+    `);
+    console.log('Migrated commands table to new schema.');
+  }
+} catch { /* table doesn't exist yet — CREATE TABLE IF NOT EXISTS above handles it */ }
 
 export function getUser(username: string): User | null {
   const row = db.prepare('SELECT * FROM users WHERE username = ?').get(username) as

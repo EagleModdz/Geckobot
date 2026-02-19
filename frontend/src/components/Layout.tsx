@@ -13,6 +13,8 @@ export function Layout() {
 
     const currentPage = location.pathname === '/' ? 'dashboard' :
         location.pathname === '/settings' ? 'settings' :
+        location.pathname === '/commands' ? 'commands' :
+        location.pathname === '/permissions' ? 'permissions' :
             undefined;
 
     return (

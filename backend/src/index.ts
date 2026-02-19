@@ -16,6 +16,10 @@ import playerRoutes from './routes/player';
 import queueRoutes from './routes/queue';
 import searchRoutes from './routes/search';
 import settingsRoutes from './routes/settings';
+import commandRoutes from './routes/commands';
+import { commandRegistry } from './services/commandRegistry';
+import permissionRoutes from './routes/permissions';
+import { permissionService } from './services/permissionService';
 
 const app = express();
 const server = createServer(app);
@@ -50,6 +54,8 @@ app.use('/api/player', playerRoutes);
 app.use('/api/queue', queueRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/commands', commandRoutes);
+app.use('/api/permissions', permissionRoutes);
 
 // Socket.IO
 io.on('connection', async (socket) => {
@@ -69,9 +75,18 @@ io.on('connection', async (socket) => {
     socket.emit('player:queue', queue);
   }
 
+  // Send current command registry state to newly connected client
+  socket.emit('commands:updated', commandRegistry.getAll());
+  socket.emit('permissions:updated', permissionService.getAllGroups());
+
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
   });
+});
+
+// Relay command registry changes to all connected clients in real-time
+commandRegistry.on('changed', (commands) => {
+  io.emit('commands:updated', commands);
 });
 
 // Broadcast status updates every 2 seconds

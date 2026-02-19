@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, Settings, Bot, FolderTree, Users, Palette, LogOut, Pin, PinOff } from 'lucide-react';
+import { Home, Settings, Bot, FolderTree, Users, Palette, LogOut, Pin, PinOff, Terminal, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { GeckoLogo } from './GeckoLogo';
 import { ThemePicker } from './ThemePicker';
@@ -10,7 +10,7 @@ interface SidebarProps {
   clientsInChannel: { id: number; name: string }[];
   onOpenChannelBrowser?: () => void;
   onOpenBotManager?: () => void;
-  currentPage?: 'dashboard' | 'settings';
+  currentPage?: 'dashboard' | 'settings' | 'commands' | 'permissions';
   ping?: number;
 }
 
@@ -102,6 +102,8 @@ export function Sidebar({ botConnected, botName, clientsInChannel, onOpenChannel
       {/* Navigation */}
       <nav className="px-3 space-y-0.5 flex-shrink-0">
         <NavItem icon={Home} label="Dashboard" active={currentPage === 'dashboard'} expanded={expanded} onClick={() => navigate('/')} />
+        <NavItem icon={Terminal} label="Commands" active={currentPage === 'commands'} expanded={expanded} onClick={() => navigate('/commands')} />
+        <NavItem icon={Shield} label="Permissions" active={currentPage === 'permissions'} expanded={expanded} onClick={() => navigate('/permissions')} />
         <NavItem icon={Settings} label="Settings" active={currentPage === 'settings'} expanded={expanded} onClick={() => navigate('/settings')} />
         {onOpenBotManager && (
           <NavItem icon={Bot} label="Manage Bots" expanded={expanded} onClick={onOpenBotManager} />

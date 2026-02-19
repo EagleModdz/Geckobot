@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
-import type { Channel } from '@/lib/api';
+import type { Channel, Command, PermissionGroup } from '@/lib/api';
 
 export interface PlayerStatus {
   isPlaying: boolean;
@@ -71,6 +71,8 @@ export function useSocket() {
   const [selectedBotId, setSelectedBotId] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [ping, setPing] = useState<number>(-1);
+  const [commands, setCommands] = useState<Command[]>([]);
+  const [permissionGroups, setPermissionGroups] = useState<PermissionGroup[]>([]);
 
   useEffect(() => {
     const socket = io(WS_URL, {
@@ -88,6 +90,8 @@ export function useSocket() {
     socket.on('bot:list', (bots: BotInfo[]) => setBotList(bots));
     socket.on('bot:selected', (id: number) => setSelectedBotId(id));
     socket.on('bot:ping', (ms: number) => setPing(ms));
+    socket.on('commands:updated', (cmds: Command[]) => setCommands(cmds));
+    socket.on('permissions:updated', (groups: PermissionGroup[]) => setPermissionGroups(groups));
 
     return () => {
       socket.disconnect();
@@ -96,5 +100,5 @@ export function useSocket() {
 
   const clearError = useCallback(() => setError(null), []);
 
-  return { connected, playerStatus, botStatus, queue, channels, botList, selectedBotId, error, ping, clearError };
+  return { connected, playerStatus, botStatus, queue, channels, botList, selectedBotId, error, ping, commands, permissionGroups, clearError };
 }

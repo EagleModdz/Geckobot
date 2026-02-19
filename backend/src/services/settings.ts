@@ -12,6 +12,7 @@ export interface BotSettings {
   ts3audiobot: {
     url: string;
     apiKey: string;
+    rightsFile: string; // absolute path to rights.toml managed by this backend
   };
   bot: {
     name: string;
@@ -44,6 +45,7 @@ const defaults: BotSettings = {
   ts3audiobot: {
     url: process.env.TS3AUDIOBOT_URL || '',
     apiKey: process.env.TS3AUDIOBOT_API_KEY || '',
+    rightsFile: process.env.RIGHTS_FILE_PATH || '',
   },
   bot: {
     name: 'MusicBot',

@@ -61,6 +61,15 @@ class TS3AudioBotService {
     return this.getClient(timeoutMs).get(`/api/${command}`);
   }
 
+  /** Reload the rights.toml on all running bot instances. */
+  async reloadRights(): Promise<void> {
+    try {
+      await this.botApi('rights/reload');
+    } catch (e: unknown) {
+      console.warn('rights reload failed:', e instanceof Error ? e.message : e);
+    }
+  }
+
   /** Reset availability cache - call after settings change */
   resetCache(): void {
     this.lastAvailableCheck = 0;
