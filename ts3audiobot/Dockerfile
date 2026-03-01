@@ -2,10 +2,10 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
 WORKDIR /src
 
-# Copy modified TS3AudioBot source (from submodule)
+# Copy modified TS3AudioBot source
 COPY ts3audiobot-src/ .
 
-# Build and publish
+# Build and publish for linux-x64
 RUN dotnet publish TS3AudioBot -c Release -r linux-x64 --self-contained -o /app/publish
 
 # --- Runtime image ---
@@ -21,11 +21,18 @@ COPY --from=build /app/publish .
 
 RUN chmod +x /app/TS3AudioBot
 
-# Create data directory and copy config
-RUN mkdir -p /app/bots/default
+# Global config
+COPY ts3audiobot/config/ts3audiobot.toml /app/ts3audiobot.toml
 
-COPY config/ts3audiobot.toml /app/ts3audiobot.toml
+# Bundle bot.toml template — entrypoint copies it to the data volume on first run
+# The real bot.toml (with identity key) is gitignored and provided via volume at runtime.
+RUN mkdir -p /app/defaults
+COPY ts3audiobot/config/bot.toml.example /app/defaults/bot.toml.example
+
+# Entrypoint script initializes the data volume on first start
+COPY ts3audiobot/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 58913
 
-CMD ["/app/TS3AudioBot", "--non-interactive"]
+CMD ["/app/entrypoint.sh"]

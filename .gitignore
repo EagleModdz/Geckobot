@@ -20,6 +20,9 @@ ts3audiobot-src/
 # Log files
 ts3audiobot-log.txt
 
+# Server data (bind mounts for prod — contains DB, avatars, bot config with identity key)
+data/
+
 # Claude Code local settings
 .claude/
 

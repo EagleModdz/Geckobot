@@ -1,0 +1,34 @@
+# TS3AudioBot bot instance configuration
+# Copy this file to your data volume as bots/default/bot.toml and fill in your details.
+
+run = true
+
+[commands]
+info_enabled = true
+
+[commands.alias]
+
+[connect]
+server_password = { pw = "" }
+channel_password = { pw = "" }
+client_version = { build = "", platform = "", sign = "" }
+# Your TeamSpeak server address and port
+address = "YOUR_TS3_SERVER:9987"
+# Default channel (path or "/<id>")
+channel = ""
+
+[connect.identity]
+# Generate an identity via TS3 client and paste it here, or let the bot generate one on first start.
+key = ""
+offset = 0
+
+[reconnect]
+
+[audio]
+volume = { default = 50.0, min = 0.0, max = 100.0 }
+
+[playlists]
+
+[history]
+
+[events]

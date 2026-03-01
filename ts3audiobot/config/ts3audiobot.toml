@@ -15,7 +15,7 @@ offset = 0
 level = -1
 
 [bot.audio]
-bitrate = 48000
+bitrate = 96
 volume = { default = 50.0, min = 0.0, max = 100.0 }
 max_user_volume = 100.0
 send_mode = "voice"
@@ -47,16 +47,16 @@ address = "0.0.0.0"
 enabled = false
 
 [rights]
-path = "rights.toml"
+path = "data/rights.toml"
 
 [rights.default]
 "+" = ["*"]
 
 [configs]
-bots_path = "bots"
+bots_path = "data/bots"
 
 [db]
-path = "ts3audiobot.db"
+path = "data/ts3audiobot.db"
 
 [factories]
 media = { path = "" }
@@ -65,4 +65,4 @@ media = { path = "" }
 prefer_resolver = "Internal"
 
 [plugins]
-path = "plugins"
+path = "data/plugins"
