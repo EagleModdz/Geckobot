@@ -41,6 +41,8 @@ services:
       dockerfile: ts3audiobot/Dockerfile
     ports:
       - "58913:58913"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       - TS3_SERVER=${TS3_SERVER:-}
     volumes:
