@@ -1,9 +1,13 @@
 FROM node:22-slim AS builder
 
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm install
-COPY . .
+# Copy root workspace files for deterministic install via package-lock.json
+COPY package.json package-lock.json ./
+COPY backend/package.json ./backend/
+RUN npm ci --workspace=backend
+
+COPY backend/ ./backend/
+WORKDIR /app/backend
 RUN npm run build
 
 FROM node:22-slim
@@ -13,11 +17,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm install --omit=dev
-COPY --from=builder /app/dist ./dist
+COPY package.json package-lock.json ./
+COPY backend/package.json ./backend/
+RUN npm ci --workspace=backend --omit=dev
 
-COPY entrypoint.sh /app/entrypoint.sh
+COPY --from=builder /app/backend/dist ./dist
+COPY backend/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 3001
