@@ -23,7 +23,8 @@ services:
       ts3audiobot:
         condition: service_healthy
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       - TS3AUDIOBOT_URL=http://ts3audiobot:58913
     volumes:
@@ -40,6 +41,8 @@ services:
       dockerfile: ts3audiobot/Dockerfile
     ports:
       - "58913:58913"
+    environment:
+      - TS3_SERVER=${TS3_SERVER:-}
     volumes:
       - ts3audiobot-data:/app/data
     healthcheck:

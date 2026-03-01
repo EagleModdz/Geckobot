@@ -1,0 +1,19 @@
+# Git
+.git
+**/.git
+
+# Node
+node_modules
+**/node_modules
+frontend/dist
+backend/dist
+
+# Dev/local data
+data/
+ts3audiobot/bin/
+ts3audiobot-log.txt
+
+# Misc
+.env
+.claude/
+*.log
