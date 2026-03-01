@@ -3,17 +3,22 @@ set -e
 
 mkdir -p /app/data/bots/default /app/data/plugins
 
-# On first run: copy bot.toml template if no config exists yet.
-# Replace /app/data/bots/default/bot.toml with your actual config to connect to TS3.
+# On first run: copy bot.toml template if no config exists yet
 if [ ! -f /app/data/bots/default/bot.toml ]; then
     cp /app/defaults/bot.toml.example /app/data/bots/default/bot.toml
-    echo ""
-    echo "================================================================"
-    echo " First run: example bot.toml copied to data/bots/default/"
-    echo " Edit it with your TS3 server address and identity key."
-    echo " Then restart the container."
-    echo "================================================================"
-    echo ""
+
+    # Inject TS3_SERVER env var into address field if provided
+    if [ -n "$TS3_SERVER" ]; then
+        sed -i "s|YOUR_TS3_SERVER:9987|${TS3_SERVER}|" /app/data/bots/default/bot.toml
+        echo "[entrypoint] TS3 server set to: $TS3_SERVER"
+    else
+        echo ""
+        echo "╔══════════════════════════════════════════════════════════╗"
+        echo "║  Set TS3_SERVER=your-server.com:9987 and restart         ║"
+        echo "║  OR edit data/ts3audiobot/bots/default/bot.toml manually ║"
+        echo "╚══════════════════════════════════════════════════════════╝"
+        echo ""
+    fi
 fi
 
 exec /app/TS3AudioBot --non-interactive

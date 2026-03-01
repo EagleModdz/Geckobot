@@ -3,18 +3,12 @@ import path from 'path';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
-const jwtSecret = process.env.JWT_SECRET;
-if (!jwtSecret) throw new Error('JWT_SECRET environment variable is required');
-
-const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD;
-if (!adminPassword) throw new Error('DEFAULT_ADMIN_PASSWORD environment variable is required');
-
 export const config = {
   port: parseInt(process.env.BACKEND_PORT || '3001', 10),
-  jwtSecret,
+  jwtSecret: process.env.JWT_SECRET || '',
   defaultAdmin: {
     username: process.env.DEFAULT_ADMIN_USER || 'admin',
-    password: adminPassword,
+    password: process.env.DEFAULT_ADMIN_PASSWORD || '',
   },
   ts3audiobot: {
     url: process.env.TS3AUDIOBOT_URL || 'http://localhost:58913',

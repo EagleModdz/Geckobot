@@ -77,62 +77,55 @@ Configure TS3 server, TS3AudioBot API, Spotify credentials, and yt-dlp — all f
 - [Docker](https://docs.docker.com/get-docker/) & Docker Compose
 - A running TeamSpeak 3 or 6 server
 
-### 1. Clone the repository
+### 1. Download the compose file
 
 ```bash
-git clone https://github.com/EagleModdz/geckobot.git
-cd geckobot
+curl -O https://raw.githubusercontent.com/EagleModdz/Geckobot/main/docker-compose.prod.yml
 ```
 
-### 2. Configure environment
+### 2. Start
 
 ```bash
-cp .env.example .env
+TS3_SERVER=your-ts3-server.com:9987 docker compose -f docker-compose.prod.yml up -d
 ```
 
-Edit `.env` and set the required values:
-
-| Variable | Description |
-|---|---|
-| `JWT_SECRET` | Random secret — generate with `openssl rand -hex 32` |
-| `DEFAULT_ADMIN_PASSWORD` | Password for the web UI admin account |
-| `TS3AUDIOBOT_API_KEY` | API key from TS3AudioBot (see step 4) |
-
-### 3. Start the stack
+That's it. On first run GeckoBot automatically generates a secure admin password and prints it to the logs:
 
 ```bash
-docker compose up -d --build
+docker compose -f docker-compose.prod.yml logs backend | grep -A6 "First Run"
 ```
 
-The first build takes a few minutes (compiles TS3AudioBot from source).
-
-### 4. Configure the bot
-
-On first start, the bot has no TS3 server configured. Edit the generated config:
-
-```bash
-nano data/ts3audiobot/bots/default/bot.toml
-```
-
-Set your TS3 server address and identity key, then restart:
-
-```bash
-docker compose restart ts3audiobot
-```
-
-To get the TS3AudioBot API key (needed in `.env`):
-
-```bash
-docker compose logs ts3audiobot | grep -i "token\|api"
-```
-
-### 5. Open the web UI
+### 3. Open the web UI
 
 ```
 http://localhost:3000
 ```
 
-Default login: `admin` / *(your `DEFAULT_ADMIN_PASSWORD`)*
+Login: `admin` / *(password from the logs)*
+
+---
+
+### Optional: `.env` file
+
+Instead of passing `TS3_SERVER` inline every time, create a `.env` next to `docker-compose.prod.yml`:
+
+```env
+TS3_SERVER=your-ts3-server.com:9987
+
+# Override auto-generated values (optional)
+DEFAULT_ADMIN_PASSWORD=my-custom-password
+JWT_SECRET=my-custom-secret
+
+# Spotify (optional)
+SPOTIFY_CLIENT_ID=
+SPOTIFY_CLIENT_SECRET=
+```
+
+Then simply:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d
+```
 
 ---
 

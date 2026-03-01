@@ -1,12 +1,21 @@
 version: "3.9"
 
-# Production compose — uses pre-built images from ghcr.io.
-# Set GHCR_IMAGE_PREFIX in .env, e.g.: ghcr.io/yourusername/musicbot
-# Set VERSION in .env or pass it directly: VERSION=v1.2.0 docker compose -f docker-compose.prod.yml up -d
+# ┌─────────────────────────────────────────────────────────────┐
+# │  GeckoBot — Production                                      │
+# │                                                             │
+# │  Minimal setup (one env var):                               │
+# │    TS3_SERVER=your-server.com:9987 docker compose up -d     │
+# │                                                             │
+# │  Admin password is auto-generated and printed in the logs:  │
+# │    docker compose logs backend | grep -A5 "First Run"       │
+# │                                                             │
+# │  Set GHCR_IMAGE_PREFIX to your registry path, e.g.:        │
+# │    ghcr.io/eaglemoddz/geckobot                              │
+# └─────────────────────────────────────────────────────────────┘
 
 services:
   frontend:
-    image: ${GHCR_IMAGE_PREFIX}-frontend:${VERSION:-latest}
+    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/eaglemoddz/geckobot}-frontend:${VERSION:-latest}
     ports:
       - "3000:80"
     depends_on:
@@ -15,14 +24,15 @@ services:
     restart: unless-stopped
 
   backend:
-    image: ${GHCR_IMAGE_PREFIX}-backend:${VERSION:-latest}
+    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/eaglemoddz/geckobot}-backend:${VERSION:-latest}
     ports:
       - "3001:3001"
     depends_on:
       ts3audiobot:
         condition: service_healthy
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       - TS3AUDIOBOT_URL=http://ts3audiobot:58913
     volumes:
@@ -35,9 +45,11 @@ services:
     restart: unless-stopped
 
   ts3audiobot:
-    image: ${GHCR_IMAGE_PREFIX}-ts3audiobot:${VERSION:-latest}
+    image: ${GHCR_IMAGE_PREFIX:-ghcr.io/eaglemoddz/geckobot}-ts3audiobot:${VERSION:-latest}
     ports:
       - "58913:58913"
+    environment:
+      - TS3_SERVER=${TS3_SERVER:-}
     volumes:
       - ./data/ts3audiobot:/app/data
     healthcheck:
