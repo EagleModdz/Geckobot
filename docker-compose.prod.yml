@@ -30,11 +30,14 @@ services:
     depends_on:
       ts3audiobot:
         condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - path: .env
         required: false
     environment:
-      - TS3AUDIOBOT_URL=http://ts3audiobot:58913
+      # ts3audiobot runs with network_mode: host, so reachable via host gateway
+      - TS3AUDIOBOT_URL=http://host.docker.internal:58913
     volumes:
       - ./data/backend:/app/data
     healthcheck:
@@ -46,10 +49,9 @@ services:
 
   ts3audiobot:
     image: ${GHCR_IMAGE_PREFIX:-ghcr.io/eaglemoddz/geckobot}-ts3audiobot:${VERSION:-latest}
-    ports:
-      - "58913:58913"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    # Host networking: bot shares host network stack, can reach any service
+    # on the host (including TS3 server in Pterodactyl/Docker) via localhost
+    network_mode: host
     environment:
       - TS3_SERVER=${TS3_SERVER:-}
     volumes:
