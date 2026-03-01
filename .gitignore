@@ -14,8 +14,7 @@ ts3audiobot/data/
 backend/data/
 backend/dist/
 
-# TS3AudioBot source (separate repo / submodule)
-ts3audiobot-src/
+# TS3AudioBot source is tracked as a git submodule
 
 # Log files
 ts3audiobot-log.txt

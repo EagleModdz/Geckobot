@@ -1,0 +1,4 @@
+[submodule "ts3audiobot-src"]
+	path = ts3audiobot-src
+	url = https://github.com/EagleModdz/TS3AudioBot.git
+	branch = develop
