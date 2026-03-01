@@ -420,7 +420,8 @@ class TS3AudioBotService {
             .finally(() => { this.isFetchingMeta = false; });
         }
       }
-      const fetched = this.fetchedMeta?.link === link ? this.fetchedMeta.track : null;
+      const fm = this.fetchedMeta;
+      const fetched = fm !== null && fm.link === link ? fm.track : null;
       const final = enrichment?.thumbnail ? enrichment : fetched ?? null;
 
       return {
