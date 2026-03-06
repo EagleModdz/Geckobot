@@ -249,7 +249,7 @@ export function Settings() {
     if (!settings) return;
     setSettings({
       ...settings,
-      [section]: { ...settings[section], [field]: value },
+      [section]: { ...(settings[section] as object), [field]: value },
     });
   };
 

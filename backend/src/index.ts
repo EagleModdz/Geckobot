@@ -22,6 +22,8 @@ import permissionRoutes from './routes/permissions';
 import { permissionService } from './services/permissionService';
 import logsRoutes from './routes/logs';
 import { logBuffer } from './services/logBuffer';
+import automationRoutes from './routes/automations';
+import { automationService } from './services/automationService';
 
 // Intercept console output into the log buffer for debug streaming
 const _origLog   = console.log.bind(console);
@@ -67,6 +69,7 @@ app.use('/api/settings', settingsRoutes);
 app.use('/api/commands', commandRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/logs', logsRoutes);
+app.use('/api/automations', automationRoutes);
 
 // Socket.IO
 io.on('connection', async (socket) => {
@@ -184,6 +187,9 @@ queueService.on('track:started', (track) => {
     volume: 50,
   });
 });
+
+// Start automation service (restores AFK polling if it was enabled)
+automationService.init();
 
 // Start server
 server.listen(config.port, () => {

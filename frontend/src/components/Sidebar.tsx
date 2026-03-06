@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, Settings, Bot, FolderTree, Users, Palette, LogOut, Pin, PinOff, Terminal, Shield, ScrollText } from 'lucide-react';
+import { Home, Settings, Bot, FolderTree, Users, Palette, LogOut, Pin, PinOff, Terminal, Shield, ScrollText, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { GeckoLogo } from './GeckoLogo';
 import { ThemePicker } from './ThemePicker';
@@ -10,7 +10,7 @@ interface SidebarProps {
   clientsInChannel: { id: number; name: string }[];
   onOpenChannelBrowser?: () => void;
   onOpenBotManager?: () => void;
-  currentPage?: 'dashboard' | 'settings' | 'commands' | 'permissions' | 'logs';
+  currentPage?: 'dashboard' | 'settings' | 'commands' | 'permissions' | 'logs' | 'automations';
   ping?: number;
   debugMode?: boolean;
 }
@@ -106,6 +106,7 @@ export function Sidebar({ botConnected, botName, clientsInChannel, onOpenChannel
         <NavItem icon={Terminal} label="Commands" active={currentPage === 'commands'} expanded={expanded} onClick={() => navigate('/commands')} />
         <NavItem icon={Shield} label="Permissions" active={currentPage === 'permissions'} expanded={expanded} onClick={() => navigate('/permissions')} />
         <NavItem icon={Settings} label="Settings" active={currentPage === 'settings'} expanded={expanded} onClick={() => navigate('/settings')} />
+        <NavItem icon={Zap} label="Automations" active={currentPage === 'automations'} expanded={expanded} onClick={() => navigate('/automations')} />
         {debugMode && (
           <NavItem icon={ScrollText} label="Logs" active={currentPage === 'logs'} expanded={expanded} onClick={() => navigate('/logs')} />
         )}

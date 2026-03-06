@@ -23,6 +23,7 @@ export function Layout() {
         location.pathname === '/commands' ? 'commands' :
         location.pathname === '/permissions' ? 'permissions' :
         location.pathname === '/logs' ? 'logs' :
+        location.pathname === '/automations' ? 'automations' :
             undefined;
 
     return (
