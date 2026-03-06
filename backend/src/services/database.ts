@@ -97,6 +97,23 @@ export function getUser(username: string): User | null {
   };
 }
 
+export function getUserById(id: string): User | null {
+  const row = db.prepare('SELECT * FROM users WHERE id = ?').get(id) as
+    | { id: string; username: string; password_hash: string; role: string }
+    | undefined;
+  if (!row) return null;
+  return {
+    id: row.id,
+    username: row.username,
+    passwordHash: row.password_hash,
+    role: row.role as 'admin' | 'user',
+  };
+}
+
+export function updateUserPassword(id: string, newHash: string): void {
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(newHash, id);
+}
+
 export function createUser(id: string, username: string, password: string, role: string): void {
   const hash = bcrypt.hashSync(password, 10);
   db.prepare('INSERT OR IGNORE INTO users (id, username, password_hash, role) VALUES (?, ?, ?, ?)').run(

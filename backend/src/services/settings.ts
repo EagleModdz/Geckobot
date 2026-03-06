@@ -20,15 +20,11 @@ export interface BotSettings {
     identity: string;
     defaultAvatar: string;
   };
-  spotify: {
-    clientId: string;
-    clientSecret: string;
-    redirectUri: string;
-  };
   ytdlp: {
     path: string;
     cookiesFile: string;
   };
+  debugMode: boolean;
 }
 
 const SETTINGS_KEY = 'app_settings';
@@ -53,16 +49,27 @@ const defaults: BotSettings = {
     identity: '',
     defaultAvatar: '',
   },
-  spotify: {
-    clientId: process.env.SPOTIFY_CLIENT_ID || '',
-    clientSecret: process.env.SPOTIFY_CLIENT_SECRET || '',
-    redirectUri: process.env.SPOTIFY_REDIRECT_URI || 'http://localhost:3001/api/spotify/callback',
-  },
   ytdlp: {
     path: process.env.YT_DLP_PATH || 'yt-dlp',
     cookiesFile: '',
   },
+  debugMode: false,
 };
+
+/** Returns dot-notation keys that are controlled by environment variables. */
+export function getEnvLockedKeys(): string[] {
+  const locked: string[] = [];
+  if (process.env.TS3AUDIOBOT_URL)           locked.push('ts3audiobot.url');
+  if (process.env.TS3AUDIOBOT_API_KEY)        locked.push('ts3audiobot.apiKey');
+  if (process.env.RIGHTS_FILE_PATH)           locked.push('ts3audiobot.rightsFile');
+  if (process.env.TS3_SERVER_HOST)            locked.push('ts3server.host');
+  if (process.env.TS3_SERVER_PORT)            locked.push('ts3server.port');
+  if (process.env.TS3_SERVER_QUERY_PORT)      locked.push('ts3server.queryPort');
+  if (process.env.TS3_SERVER_QUERY_USER)      locked.push('ts3server.queryUser');
+  if (process.env.TS3_SERVER_QUERY_PASSWORD)  locked.push('ts3server.queryPassword');
+  if (process.env.YT_DLP_PATH)               locked.push('ytdlp.path');
+  return locked;
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyObj = Record<string, any>;
@@ -113,11 +120,12 @@ class SettingsService {
         ...s.ts3audiobot,
         apiKey: s.ts3audiobot.apiKey ? '********' : '',
       },
-      spotify: {
-        ...s.spotify,
-        clientSecret: s.spotify.clientSecret ? '********' : '',
-      },
+      debugMode: s.debugMode,
     };
+  }
+
+  getDebugMode(): boolean {
+    return this.load().debugMode;
   }
 
   /** Merges incoming partial update, preserving masked password fields */

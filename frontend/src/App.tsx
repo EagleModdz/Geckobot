@@ -4,6 +4,7 @@ import { Login } from './pages/Login';
 import { Settings } from './pages/Settings';
 import { Commands } from './pages/Commands';
 import { Permissions } from './pages/Permissions';
+import { Logs } from './pages/Logs';
 import { Layout } from './components/Layout';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="settings" element={<Settings />} />
         <Route path="commands" element={<Commands />} />
         <Route path="permissions" element={<Permissions />} />
+        <Route path="logs" element={<Logs />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

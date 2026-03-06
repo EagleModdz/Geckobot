@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Home, Settings, Bot, FolderTree, Users, Palette, LogOut, Pin, PinOff, Terminal, Shield } from 'lucide-react';
+import { Home, Settings, Bot, FolderTree, Users, Palette, LogOut, Pin, PinOff, Terminal, Shield, ScrollText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { GeckoLogo } from './GeckoLogo';
 import { ThemePicker } from './ThemePicker';
@@ -10,8 +10,9 @@ interface SidebarProps {
   clientsInChannel: { id: number; name: string }[];
   onOpenChannelBrowser?: () => void;
   onOpenBotManager?: () => void;
-  currentPage?: 'dashboard' | 'settings' | 'commands' | 'permissions';
+  currentPage?: 'dashboard' | 'settings' | 'commands' | 'permissions' | 'logs';
   ping?: number;
+  debugMode?: boolean;
 }
 
 function PingDot({ ping }: { ping: number }) {
@@ -25,7 +26,7 @@ function PingDot({ ping }: { ping: number }) {
   );
 }
 
-export function Sidebar({ botConnected, botName, clientsInChannel, onOpenChannelBrowser, onOpenBotManager, currentPage = 'dashboard', ping = -1 }: SidebarProps) {
+export function Sidebar({ botConnected, botName, clientsInChannel, onOpenChannelBrowser, onOpenBotManager, currentPage = 'dashboard', ping = -1, debugMode = false }: SidebarProps) {
   const navigate = useNavigate();
   /* const { theme, setTheme } = useTheme(); */
   // theme and setTheme are now handled by ThemePicker
@@ -105,6 +106,9 @@ export function Sidebar({ botConnected, botName, clientsInChannel, onOpenChannel
         <NavItem icon={Terminal} label="Commands" active={currentPage === 'commands'} expanded={expanded} onClick={() => navigate('/commands')} />
         <NavItem icon={Shield} label="Permissions" active={currentPage === 'permissions'} expanded={expanded} onClick={() => navigate('/permissions')} />
         <NavItem icon={Settings} label="Settings" active={currentPage === 'settings'} expanded={expanded} onClick={() => navigate('/settings')} />
+        {debugMode && (
+          <NavItem icon={ScrollText} label="Logs" active={currentPage === 'logs'} expanded={expanded} onClick={() => navigate('/logs')} />
+        )}
         {onOpenBotManager && (
           <NavItem icon={Bot} label="Manage Bots" expanded={expanded} onClick={onOpenBotManager} />
         )}
