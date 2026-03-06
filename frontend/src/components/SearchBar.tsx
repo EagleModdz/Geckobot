@@ -21,55 +21,6 @@ export interface SearchBarHandle {
   hasResults: boolean;
 }
 
-interface SearchInputProps {
-  query: string;
-  setQuery: (q: string) => void;
-  activeTab: 'youtube' | 'spotify';
-  setActiveTab: (t: 'youtube' | 'spotify') => void;
-  onSearch: () => void;
-  loading: boolean;
-}
-
-export function SearchInput({ query, setQuery, activeTab, setActiveTab, onSearch, loading }: SearchInputProps) {
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex bg-secondary/50 rounded-md p-0.5">
-        <button
-          onClick={() => setActiveTab('youtube')}
-          className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${activeTab === 'youtube'
-            ? 'bg-red-500/20 text-red-400'
-            : 'text-muted-foreground hover:text-foreground'
-            }`}
-        >
-          YouTube
-        </button>
-        <button
-          onClick={() => setActiveTab('spotify')}
-          className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${activeTab === 'spotify'
-            ? 'bg-green-500/20 text-green-400'
-            : 'text-muted-foreground hover:text-foreground'
-            }`}
-        >
-          Spotify
-        </button>
-      </div>
-      <div className="relative flex-1 max-w-md">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-        <Input
-          placeholder={`Search ${activeTab}...`}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && onSearch()}
-          className="h-8 pl-8 text-sm"
-        />
-      </div>
-      <Button onClick={onSearch} disabled={loading} size="sm" className="h-8">
-        {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
-      </Button>
-    </div>
-  );
-}
-
 export function SearchResults({ results, error, loading, busyId, onPlay, onQueue }: {
   results: Track[];
   error: string | null;
@@ -154,8 +105,6 @@ export function SearchResults({ results, error, loading, busyId, onPlay, onQueue
           </div>
         </div>
       ))}
-
-
     </div>
   );
 }
@@ -166,7 +115,6 @@ const _cache = {
   allTracks: [] as Track[],
   results: [] as Track[],
   page: 1,
-  activeTab: 'youtube' as 'youtube' | 'spotify',
   error: null as string | null,
 };
 
@@ -175,22 +123,18 @@ export const SearchBar = forwardRef<SearchBarHandle>(function SearchBar(_props, 
   const [results, setResults] = useState<Track[]>(_cache.results);
   const [allTracks, setAllTracks] = useState<Track[]>(_cache.allTracks);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'youtube' | 'spotify'>(_cache.activeTab);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(_cache.error);
   const [page, setPage] = useState(_cache.page);
   const [hasMore, setHasMore] = useState(false);
+  const [limit, setLimit] = useState(10);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Keep cache in sync so state survives navigation
   const setQueryC = (v: string) => { _cache.query = v; setQuery(v); };
   const setResultsC = (v: Track[]) => { _cache.results = v; setResults(v); };
   const setAllTracksC = (v: Track[]) => { _cache.allTracks = v; setAllTracks(v); };
   const setPageC = (v: number) => { _cache.page = v; setPage(v); };
   const setErrorC = (v: string | null) => { _cache.error = v; setError(v); };
-  const setActiveTabC = (v: 'youtube' | 'spotify') => { _cache.activeTab = v; setActiveTab(v); };
-
-  const [limit, setLimit] = useState(10);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useImperativeHandle(ref, () => ({
     get hasResults() { return results.length > 0; }
@@ -201,82 +145,54 @@ export const SearchBar = forwardRef<SearchBarHandle>(function SearchBar(_props, 
     const updateLimit = () => {
       if (containerRef.current) {
         const height = containerRef.current.clientHeight;
-        const itemHeight = 62; // Approximate height of a search result item
-        const newLimit = Math.max(3, Math.floor(height / itemHeight));
+        const newLimit = Math.max(3, Math.floor(height / 62));
         setLimit(newLimit);
       }
     };
-
-    updateLimit(); // Initial calculation
+    updateLimit();
     window.addEventListener('resize', updateLimit);
     return () => window.removeEventListener('resize', updateLimit);
   }, []);
 
-  // Update displayed results when page, limit, or buffer changes
+  // Update displayed results when page/limit/buffer changes
   useEffect(() => {
-    if (activeTab === 'youtube') {
-      const start = (page - 1) * limit;
-      const end = start + limit;
-      setResultsC(allTracks.slice(start, end));
-      setHasMore(allTracks.length > end || (allTracks.length > 0 && allTracks.length % 50 === 0));
-    }
-  }, [page, limit, allTracks, activeTab]);
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    setResultsC(allTracks.slice(start, end));
+    setHasMore(allTracks.length > end || (allTracks.length > 0 && allTracks.length % 50 === 0));
+  }, [page, limit, allTracks]);
 
   const handleSearch = async (targetPage = 1, isNewSearch = false) => {
     if (!query.trim()) return;
 
-    // Reset if new search
     let currentBuffer = isNewSearch ? [] : [...allTracks];
     if (isNewSearch) {
       setAllTracksC([]);
       setPageC(1);
       setResultsC([]);
-      // currentBuffer is []
     }
 
     const endNeeded = targetPage * limit;
     const BATCH_SIZE = 25;
 
-    if (activeTab === 'youtube') {
-      // If we don't have enough data in buffer, fetch more
-      if (currentBuffer.length < endNeeded) {
-        setLoading(true);
-        setErrorC(null);
-        try {
-          const nextBatchPage = Math.floor(currentBuffer.length / BATCH_SIZE) + 1;
-          const data = await api.searchYouTube(query, nextBatchPage, BATCH_SIZE);
-
-          if (data.error) setErrorC(data.error);
-
-          if (data.tracks && data.tracks.length > 0) {
-            currentBuffer = [...currentBuffer, ...data.tracks];
-            setAllTracksC(currentBuffer);
-          }
-        } catch (err) {
-          setErrorC(err instanceof Error ? err.message : 'Search failed');
-        } finally {
-          setLoading(false);
-        }
-      }
-      setPageC(targetPage);
-    } else {
+    if (currentBuffer.length < endNeeded) {
       setLoading(true);
       setErrorC(null);
       try {
-        const data = await api.searchSpotify(query);
-        setResultsC(data.tracks);
-        setAllTracksC(data.tracks);
+        const nextBatchPage = Math.floor(currentBuffer.length / BATCH_SIZE) + 1;
+        const data = await api.searchYouTube(query, nextBatchPage, BATCH_SIZE);
+        if (data.error) setErrorC(data.error);
+        if (data.tracks && data.tracks.length > 0) {
+          currentBuffer = [...currentBuffer, ...data.tracks];
+          setAllTracksC(currentBuffer);
+        }
       } catch (err) {
-        setResultsC([]);
         setErrorC(err instanceof Error ? err.message : 'Search failed');
       } finally {
         setLoading(false);
       }
     }
-  };
-
-  const onSearchClick = () => {
-    handleSearch(1, true);
+    setPageC(targetPage);
   };
 
   const handlePlay = async (track: Track) => {
@@ -311,17 +227,25 @@ export const SearchBar = forwardRef<SearchBarHandle>(function SearchBar(_props, 
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Top bar search input */}
+      {/* Search input */}
       <div className="p-3 border-b border-border/30 flex-shrink-0">
-        <SearchInput
-          query={query}
-          setQuery={setQueryC}
-          activeTab={activeTab}
-          setActiveTab={(t) => { setActiveTabC(t); setErrorC(null); setResultsC([]); setPageC(1); }}
-          onSearch={onSearchClick}
-          loading={loading}
-        />
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Search YouTube..."
+              value={query}
+              onChange={(e) => setQueryC(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch(1, true)}
+              className="h-8 pl-8 text-sm"
+            />
+          </div>
+          <Button onClick={() => handleSearch(1, true)} disabled={loading} size="sm" className="h-8">
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+          </Button>
+        </div>
       </div>
+
       {/* Results */}
       <div ref={containerRef} className="flex-1 overflow-hidden min-h-0">
         <SearchResults
@@ -334,8 +258,8 @@ export const SearchBar = forwardRef<SearchBarHandle>(function SearchBar(_props, 
         />
       </div>
 
-      {/* Pagination Footer */}
-      {activeTab === 'youtube' && results.length > 0 && (
+      {/* Pagination */}
+      {results.length > 0 && (
         <div className="p-2 border-t border-border/30 bg-card/50 flex items-center justify-center gap-2 flex-shrink-0">
           <Button
             variant="outline"

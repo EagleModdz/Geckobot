@@ -21,10 +21,5 @@ export const config = {
     queryUser: process.env.TS3_SERVER_QUERY_USER || 'serveradmin',
     queryPassword: process.env.TS3_SERVER_QUERY_PASSWORD || '',
   },
-  spotify: {
-    clientId: process.env.SPOTIFY_CLIENT_ID || '',
-    clientSecret: process.env.SPOTIFY_CLIENT_SECRET || '',
-    redirectUri: process.env.SPOTIFY_REDIRECT_URI || 'http://localhost:3001/api/spotify/callback',
-  },
   dataDir: process.env.DATA_DIR || path.resolve(__dirname, '../data'),
 };
