@@ -3,8 +3,8 @@ version: "3.9"
 services:
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
     ports:
       - "3000:80"
     depends_on:
@@ -15,8 +15,8 @@ services:
 
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     ports:
       - "3001:3001"
     depends_on:
@@ -25,10 +25,10 @@ services:
     env_file:
       - path: .env
         required: false
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
-      - TS3AUDIOBOT_URL=http://ts3audiobot:58913
-      # Optional: enable TS3AudioBot log streaming in debug mode
-      # - DOCKER_TS3AUDIOBOT_CONTAINER=musicbot-ts3audiobot-1
+      - TS3AUDIOBOT_URL=http://host.docker.internal:58913
     volumes:
       - backend-data:/app/data
       # Optional: mount Docker socket for TS3AudioBot log streaming (debug mode)
@@ -43,8 +43,7 @@ services:
     build:
       context: .
       dockerfile: ts3audiobot/Dockerfile
-    ports:
-      - "58913:58913"
+    network_mode: host
     environment:
       - TS3_SERVER=${TS3_SERVER:-}
     volumes:
