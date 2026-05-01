@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth';
-import { settingsService } from '../services/settings';
+import { settingsService, getEnvLockedKeys } from '../services/settings';
 import { ts3audiobot } from '../services/ts3audiobot';
 
 const router = Router();
@@ -35,6 +35,17 @@ router.put('/', (req: Request, res: Response) => {
     const msg = error instanceof Error ? error.message : 'Failed to save settings';
     res.status(500).json({ error: msg });
   }
+});
+
+// Any authenticated user can read the debug-mode flag (needed by Sidebar)
+router.get('/debug-mode', (req: Request, res: Response) => {
+  res.json({ debugMode: settingsService.getDebugMode() });
+});
+
+// Admin-only: which settings keys are locked by env vars
+router.get('/env-locked', (req: Request, res: Response) => {
+  if (!requireAdmin(req, res)) return;
+  res.json({ locked: getEnvLockedKeys() });
 });
 
 router.post('/test-ts3audiobot', async (req: Request, res: Response) => {

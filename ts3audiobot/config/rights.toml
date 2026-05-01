@@ -1,0 +1,53 @@
+# Rights declaration file
+# https://github.com/Splamy/TS3AudioBot/wiki/Rights
+
+"+" = [
+        "cmd.help.*",
+        "cmd.pm",
+        "cmd.subscribe",
+        "cmd.unsubscribe",
+        "cmd.kickme.*",
+        "cmd.version",
+        "cmd.song",
+        "cmd.repeat",
+        "cmd.random",
+        "cmd.if",
+        "cmd.print",
+        "cmd.rng",
+        "cmd.eval",
+        "cmd.take",
+        "cmd.xecute",
+        "cmd.getmy.*",
+        "cmd.json.*",
+        "cmd.bot.use",
+        "cmd.rights.can",
+]
+
+# Admin: localhost + Docker internal networks
+[[rule]]
+        ip = [ "127.0.0.1", "::1", "::ffff:127.0.0.1", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16" ]
+        "+" = "*"
+
+# Playing rights for everyone
+[[rule]]
+        "+" = [
+                "cmd.play",
+                "cmd.pause",
+                "cmd.stop",
+                "cmd.seek",
+                "cmd.volume",
+                "cmd.list.*",
+                "cmd.add",
+                "cmd.clear",
+                "cmd.previous",
+                "cmd.next",
+                "cmd.random.*",
+                "cmd.repeat.*",
+                "cmd.history.add",
+                "cmd.history.from",
+                "cmd.history.id",
+                "cmd.history.last",
+                "cmd.history.play",
+                "cmd.history.till",
+                "cmd.history.title",
+        ]

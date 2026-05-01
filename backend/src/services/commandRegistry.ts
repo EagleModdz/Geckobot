@@ -29,50 +29,46 @@ type DbRow = {
 
 const BUILTIN_COMMANDS: Omit<Command, 'id' | 'enabled' | 'botStates'>[] = [
   // Playback
-  { command: 'play',     label: 'Play',          description: 'Play audio from a URL or resource',       category: 'Playback' },
-  { command: 'pause',    label: 'Pause',         description: 'Pause or resume playback',                category: 'Playback' },
-  { command: 'stop',     label: 'Stop',          description: 'Stop playback and clear current track',   category: 'Playback' },
-  { command: 'next',     label: 'Skip',          description: 'Skip to the next track in the queue',     category: 'Playback' },
-  { command: 'previous', label: 'Previous',      description: 'Go back to the previous track',           category: 'Playback' },
-  { command: 'seek',     label: 'Seek',          description: 'Seek to a position (seconds)',            category: 'Playback' },
-  { command: 'volume',   label: 'Volume',        description: 'Get or set the playback volume (0–100)',  category: 'Playback' },
-  { command: 'repeat',   label: 'Repeat',        description: 'Set repeat mode (off / one / all)',       category: 'Playback' },
-  { command: 'random',   label: 'Shuffle',       description: 'Enable or disable random playback order', category: 'Playback' },
-  { command: 'song',     label: 'Now Playing',   description: 'Show information about the current track', category: 'Playback' },
-
-  // Queue
-  { command: 'add',              label: 'Add to Queue',    description: 'Add a track to the play queue',           category: 'Queue' },
-  { command: 'clear',            label: 'Clear Queue',     description: 'Clear the entire play queue',             category: 'Queue' },
-  { command: 'list play',        label: 'Play Playlist',   description: 'Play tracks from a saved playlist',       category: 'Queue' },
-  { command: 'list queue',       label: 'Queue Playlist',  description: 'Append a playlist to the queue',         category: 'Queue' },
-  { command: 'list show',        label: 'Show Playlist',   description: 'Display the contents of a playlist',     category: 'Queue' },
-  { command: 'list list',        label: 'List Playlists',  description: 'List all available saved playlists',     category: 'Queue' },
+  { command: 'play',       label: 'Play',           description: 'Play audio from a URL or resource',              category: 'Playback' },
+  { command: 'pause',      label: 'Pause',          description: 'Pause or resume playback',                       category: 'Playback' },
+  { command: 'stop',       label: 'Stop',           description: 'Stop playback',                                  category: 'Playback' },
+  { command: 'next',       label: 'Next',           description: 'Skip to the next track',                         category: 'Playback' },
+  { command: 'previous',   label: 'Previous',       description: 'Go back to the previous track',                  category: 'Playback' },
+  { command: 'seek',       label: 'Seek',           description: 'Seek to a position in seconds',                  category: 'Playback' },
+  { command: 'volume',     label: 'Volume',         description: 'Get or set the playback volume (0–100)',         category: 'Playback' },
+  { command: 'repeat off', label: 'Repeat Off',     description: 'Disable repeat mode',                            category: 'Playback' },
+  { command: 'repeat one', label: 'Repeat One',     description: 'Repeat only the current track',                  category: 'Playback' },
+  { command: 'repeat all', label: 'Repeat All',     description: 'Repeat the entire queue',                        category: 'Playback' },
+  { command: 'random on',  label: 'Shuffle On',     description: 'Enable random/shuffle playback order',           category: 'Playback' },
+  { command: 'random off', label: 'Shuffle Off',    description: 'Disable random/shuffle playback order',          category: 'Playback' },
+  { command: 'song',       label: 'Now Playing',    description: 'Show information about the current track',       category: 'Playback' },
 
   // Bot
-  { command: 'bot name',          label: 'Bot Name',        description: 'Get or set the bot display name',        category: 'Bot' },
-  { command: 'bot move',          label: 'Move to Channel', description: 'Move the bot to a specific channel',     category: 'Bot' },
-  { command: 'bot come',          label: 'Come Here',       description: 'Move the bot to the invoker\'s channel', category: 'Bot' },
-  { command: 'bot info',          label: 'Bot Info',        description: 'Show bot status and information',        category: 'Bot' },
-  { command: 'bot description set', label: 'Set Description', description: 'Update the bot\'s status description', category: 'Bot' },
-  { command: 'bot avatar set',    label: 'Set Avatar',      description: 'Set the bot avatar from a file or URL',  category: 'Bot' },
-  { command: 'bot commander',     label: 'Commander Mode',  description: 'Toggle channel commander mode',          category: 'Bot' },
-  { command: 'bot disconnect',    label: 'Disconnect Bot',  description: 'Disconnect the bot from the server',     category: 'Bot' },
+  { command: 'bot name',            label: 'Bot Name',           description: 'Get or set the bot display name',             category: 'Bot' },
+  { command: 'bot move',            label: 'Move to Channel',    description: 'Move the bot to a specific channel',           category: 'Bot' },
+  { command: 'bot come',            label: 'Come Here',          description: 'Move the bot to the invoker\'s channel',       category: 'Bot' },
+  { command: 'bot info',            label: 'Bot Info',           description: 'Show bot status and connection information',    category: 'Bot' },
+  { command: 'bot description set', label: 'Set Description',    description: 'Update the bot\'s channel description',        category: 'Bot' },
+  { command: 'bot avatar set',      label: 'Set Avatar',         description: 'Set the bot avatar from a URL or file path',   category: 'Bot' },
+  { command: 'bot commander on',    label: 'Commander On',       description: 'Enable channel commander mode',                category: 'Bot' },
+  { command: 'bot commander off',   label: 'Commander Off',      description: 'Disable channel commander mode',               category: 'Bot' },
+  { command: 'bot disconnect',      label: 'Disconnect Bot',     description: 'Disconnect the bot from the server',           category: 'Bot' },
 
   // Subscription / Voice
-  { command: 'subscribe',         label: 'Subscribe',       description: 'Subscribe to the bot\'s audio stream',   category: 'Voice' },
-  { command: 'unsubscribe',       label: 'Unsubscribe',     description: 'Unsubscribe from the audio stream',      category: 'Voice' },
-  { command: 'whisper all',       label: 'Whisper All',     description: 'Whisper to all clients',                 category: 'Voice' },
-  { command: 'whisper off',       label: 'Whisper Off',     description: 'Disable whisper mode',                   category: 'Voice' },
+  { command: 'subscribe',           label: 'Subscribe',          description: 'Add yourself to the bot\'s whisper subscription list', category: 'Voice' },
+  { command: 'unsubscribe',         label: 'Unsubscribe',        description: 'Remove yourself from the bot\'s whisper subscription list', category: 'Voice' },
+  { command: 'whisper all',         label: 'Whisper All',        description: 'Set bot to whisper to all clients on the server',  category: 'Voice' },
+  { command: 'whisper off',         label: 'Whisper Off',        description: 'Disable whisper mode, revert to normal voice',    category: 'Voice' },
 
   // Info
-  { command: 'help',    label: 'Help',    description: 'Show command help text',                   category: 'Info' },
-  { command: 'version', label: 'Version', description: 'Show the bot version string',              category: 'Info' },
+  { command: 'help',    label: 'Help',    description: 'Show available commands and help text',  category: 'Info' },
+  { command: 'version', label: 'Version', description: 'Show the bot version string',             category: 'Info' },
 
   // Admin
-  { command: 'settings get',    label: 'Get Setting',    description: 'Read a bot configuration value',   category: 'Admin' },
-  { command: 'settings set',    label: 'Set Setting',    description: 'Write a bot configuration value',  category: 'Admin' },
-  { command: 'rights reload',   label: 'Reload Rights',  description: 'Reload the rights/permissions config', category: 'Admin' },
-  { command: 'plugin list',     label: 'List Plugins',   description: 'List loaded plugins',               category: 'Admin' },
+  { command: 'settings get',  label: 'Get Setting',   description: 'Read a bot configuration value',         category: 'Admin' },
+  { command: 'settings set',  label: 'Set Setting',   description: 'Write a bot configuration value',        category: 'Admin' },
+  { command: 'rights reload', label: 'Reload Rights', description: 'Reload the rights/permissions config',   category: 'Admin' },
+  { command: 'plugin list',   label: 'List Plugins',  description: 'List all currently loaded plugins',      category: 'Admin' },
 ];
 
 // ── Registry class ───────────────────────────────────────────────────────────
@@ -84,6 +80,7 @@ class CommandRegistry extends EventEmitter {
     super();
     this.loadFromDb();
     this.seed();
+    this.prune();
   }
 
   private loadFromDb(): void {
@@ -119,6 +116,17 @@ class CommandRegistry extends EventEmitter {
         enabled: true,
         botStates: {},
       });
+    }
+  }
+
+  /** Remove DB rows for commands that are no longer in BUILTIN_COMMANDS. */
+  private prune(): void {
+    const validCommands = new Set(BUILTIN_COMMANDS.map((c) => c.command));
+    for (const [id, cmd] of this.commands) {
+      if (!validCommands.has(cmd.command)) {
+        db.prepare('DELETE FROM commands WHERE id = ?').run(id);
+        this.commands.delete(id);
+      }
     }
   }
 

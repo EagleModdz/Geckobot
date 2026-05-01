@@ -28,6 +28,7 @@ COPY ts3audiobot/config/ts3audiobot.toml /app/ts3audiobot.toml
 # The real bot.toml (with identity key) is gitignored and provided via volume at runtime.
 RUN mkdir -p /app/defaults
 COPY ts3audiobot/config/bot.toml.example /app/defaults/bot.toml.example
+COPY ts3audiobot/config/rights.toml /app/defaults/rights.toml
 
 # Entrypoint script initializes the data volume on first start
 COPY ts3audiobot/entrypoint.sh /app/entrypoint.sh

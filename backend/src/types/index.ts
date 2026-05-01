@@ -5,8 +5,7 @@ export interface Track {
   duration: number; // seconds; 0 = live stream
   thumbnail: string;
   url: string;
-  source: 'youtube' | 'spotify';
-  spotifyUri?: string;
+  source: string;
   isLive?: boolean;
 }
 
@@ -47,7 +46,7 @@ export interface Channel {
 
 export interface SearchResult {
   tracks: Track[];
-  source: 'youtube' | 'spotify';
+  source: string;
   query: string;
 }
 
@@ -68,11 +67,6 @@ export interface Settings {
   };
   botName: string;
   defaultChannel: string;
-  spotify: {
-    clientId: string;
-    clientSecret: string;
-    redirectUri: string;
-  };
 }
 
 export interface JwtPayload {

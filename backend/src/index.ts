@@ -20,6 +20,18 @@ import commandRoutes from './routes/commands';
 import { commandRegistry } from './services/commandRegistry';
 import permissionRoutes from './routes/permissions';
 import { permissionService } from './services/permissionService';
+import logsRoutes from './routes/logs';
+import { logBuffer } from './services/logBuffer';
+import automationRoutes from './routes/automations';
+import { automationService } from './services/automationService';
+
+// Intercept console output into the log buffer for debug streaming
+const _origLog   = console.log.bind(console);
+const _origWarn  = console.warn.bind(console);
+const _origError = console.error.bind(console);
+console.log   = (...args) => { _origLog(...args);   logBuffer.push('info',  args.map(String).join(' ')); };
+console.warn  = (...args) => { _origWarn(...args);  logBuffer.push('warn',  args.map(String).join(' ')); };
+console.error = (...args) => { _origError(...args); logBuffer.push('error', args.map(String).join(' ')); };
 
 const app = express();
 const server = createServer(app);
@@ -56,6 +68,8 @@ app.use('/api/search', searchRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/commands', commandRoutes);
 app.use('/api/permissions', permissionRoutes);
+app.use('/api/logs', logsRoutes);
+app.use('/api/automations', automationRoutes);
 
 // Socket.IO
 io.on('connection', async (socket) => {
@@ -173,6 +187,9 @@ queueService.on('track:started', (track) => {
     volume: 50,
   });
 });
+
+// Start automation service (restores AFK polling if it was enabled)
+automationService.init();
 
 // Start server
 server.listen(config.port, () => {

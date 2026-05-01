@@ -100,6 +100,11 @@ export const api = {
       { method: 'POST', body: JSON.stringify({ username, password }) },
     ),
   me: () => request<{ user: { userId: string; username: string; role: string } }>('/api/auth/me'),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<{ message: string }>('/api/auth/change-password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    }),
 
   // Bot
   botConnect: () => request('/api/bot/connect', { method: 'POST' }),
@@ -191,12 +196,6 @@ export const api = {
       page: number;
       limit: number;
     }>(`/api/search/youtube?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}`),
-  searchSpotify: (q: string) =>
-    request<{
-      tracks: { id: string; title: string; artist: string; duration: number; thumbnail: string; url: string; source: string; spotifyUri?: string }[];
-      error?: string;
-    }>(`/api/search/spotify?q=${encodeURIComponent(q)}`),
-
   // Avatar
   uploadBotAvatar: (file: File) =>
     uploadFile('/api/bot/avatar', file),
@@ -241,13 +240,39 @@ export const api = {
   clearBotCommandOverride: (id: string, botId: number) =>
     request<{ command: Command }>(`/api/commands/${id}/bots/${botId}/override`, { method: 'DELETE' }),
 
+  // Automations
+  getAutomationConfig: () =>
+    request<{ config: {
+      afk: { enabled: boolean; afkChannelId: number | null; idleMinutes: number; immediateOnAway: boolean; whitelist: string[]; notifyUser: boolean; notifyMessage: string };
+      nameRotation: { enabled: boolean; names: string[]; intervalSeconds: number };
+    } }>('/api/automations/config'),
+  updateAutomationConfig: (patch: {
+    afk?: Partial<{ enabled: boolean; afkChannelId: number | null; idleMinutes: number; immediateOnAway: boolean; whitelist: string[]; notifyUser: boolean; notifyMessage: string }>;
+    nameRotation?: Partial<{ enabled: boolean; names: string[]; intervalSeconds: number }>;
+  }) => request<{ config: unknown }>('/api/automations/config', { method: 'PUT', body: JSON.stringify(patch) }),
+  getAutomationStatus: () =>
+    request<{
+      nameRotation: { running: boolean; currentName: string | null; nextName: string | null };
+      afk: { lastError: string | null; failureCount: number };
+    }>('/api/automations/status'),
+  startNameRotation: () =>
+    request<{ status: { running: boolean; currentName: string | null; nextName: string | null } }>('/api/automations/name-rotation/start', { method: 'POST' }),
+  stopNameRotation: () =>
+    request<{ status: { running: boolean; currentName: string | null; nextName: string | null } }>('/api/automations/name-rotation/stop', { method: 'POST' }),
+
+  // Debug / env-lock helpers
+  getDebugMode: () =>
+    request<{ debugMode: boolean }>('/api/settings/debug-mode'),
+  getEnvLocked: () =>
+    request<{ locked: string[] }>('/api/settings/env-locked'),
+
   // Settings
   getSettings: () => request<{
     ts3server: { host: string; port: number; queryPort: number; queryUser: string; queryPassword: string; serverPassword: string };
     ts3audiobot: { url: string; apiKey: string; rightsFile: string };
     bot: { name: string; defaultChannel: string; identity: string; defaultAvatar: string };
-    spotify: { clientId: string; clientSecret: string; redirectUri: string };
     ytdlp: { path: string; cookiesFile: string };
+    debugMode: boolean;
   }>('/api/settings'),
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   saveSettings: (settings: any) =>

@@ -21,4 +21,10 @@ if [ ! -f /app/data/bots/default/bot.toml ]; then
     fi
 fi
 
+# On first run: copy rights.toml template if none exists
+if [ ! -f /app/data/rights.toml ]; then
+    cp /app/defaults/rights.toml /app/data/rights.toml
+    echo "[entrypoint] rights.toml initialized"
+fi
+
 exec /app/TS3AudioBot --non-interactive
