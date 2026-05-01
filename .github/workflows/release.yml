@@ -2,8 +2,8 @@ name: Build & Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
 
 env:
   REGISTRY: ghcr.io
@@ -12,14 +12,34 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: write   # create GitHub Release
+      contents: write   # create tag + GitHub Release
       packages: write   # push to ghcr.io
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          fetch-depth: 0
           submodules: recursive
+
+      - name: Determine next version
+        id: version
+        run: |
+          LATEST=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          VERSION=${LATEST#v}
+          MAJOR=$(echo "$VERSION" | cut -d. -f1)
+          MINOR=$(echo "$VERSION" | cut -d. -f2)
+          PATCH=$(echo "$VERSION" | cut -d. -f3)
+          NEW_TAG="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+          echo "tag=$NEW_TAG" >> "$GITHUB_OUTPUT"
+          echo "Bumped $LATEST → $NEW_TAG"
+
+      - name: Create and push tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.version.outputs.tag }}"
+          git push origin "${{ steps.version.outputs.tag }}"
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -42,7 +62,7 @@ jobs:
           file: frontend/Dockerfile
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}-frontend:${{ github.ref_name }}
+            ${{ env.IMAGE_PREFIX }}-frontend:${{ steps.version.outputs.tag }}
             ${{ env.IMAGE_PREFIX }}-frontend:latest
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,scope=frontend,mode=max
@@ -55,7 +75,7 @@ jobs:
           file: backend/Dockerfile
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}-backend:${{ github.ref_name }}
+            ${{ env.IMAGE_PREFIX }}-backend:${{ steps.version.outputs.tag }}
             ${{ env.IMAGE_PREFIX }}-backend:latest
           cache-from: type=gha,scope=backend
           cache-to: type=gha,scope=backend,mode=max
@@ -68,7 +88,7 @@ jobs:
           file: ts3audiobot/Dockerfile
           push: true
           tags: |
-            ${{ env.IMAGE_PREFIX }}-ts3audiobot:${{ github.ref_name }}
+            ${{ env.IMAGE_PREFIX }}-ts3audiobot:${{ steps.version.outputs.tag }}
             ${{ env.IMAGE_PREFIX }}-ts3audiobot:latest
           cache-from: type=gha,scope=ts3audiobot
           cache-to: type=gha,scope=ts3audiobot,mode=max
@@ -77,6 +97,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.version.outputs.tag }}
           generate_release_notes: true
           body: |
             ## Docker Images
@@ -86,5 +107,5 @@ jobs:
             docker compose -f docker-compose.prod.yml pull
 
             # Or pull a specific version
-            VERSION=${{ github.ref_name }} docker compose -f docker-compose.prod.yml pull
+            VERSION=${{ steps.version.outputs.tag }} docker compose -f docker-compose.prod.yml pull
             ```
