@@ -12,8 +12,10 @@ RUN dotnet publish TS3AudioBot -c Release -r linux-x64 --self-contained -o /app/
 FROM mcr.microsoft.com/dotnet/runtime:8.0
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget ffmpeg libopus-dev libopus0 libssl-dev ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+    wget curl ffmpeg libopus-dev libopus0 libssl-dev ca-certificates python3 \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
+    && chmod +x /usr/local/bin/yt-dlp
 
 WORKDIR /app
 

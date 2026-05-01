@@ -28,7 +28,7 @@ ontimeout = ["1s", "2s", "5s", "10s", "30s", "1m", "5m", "repeat last"]
 onerror = ["30s", "repeat last"]
 
 [tools]
-youtube-dl = { path = "" }
+youtube-dl = { path = "/usr/local/bin/yt-dlp" }
 ffmpeg = { path = "/usr/bin/ffmpeg" }
 
 [web]
@@ -62,7 +62,7 @@ path = "data/ts3audiobot.db"
 media = { path = "" }
 
 [factories.youtube]
-prefer_resolver = "Internal"
+prefer_resolver = "YoutubeDl"
 
 [plugins]
 path = "data/plugins"
